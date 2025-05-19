@@ -18,7 +18,13 @@ const PORT = process.env.PORT || 10000;
 app.use(express.json({ limit: '15mb' })); // Erhöhte Größenbegrenzung für JSON-Daten
 app.use(express.urlencoded({ extended: true, limit: '15mb' })); // Erhöhte Größenbegrenzung für URL-kodierte Daten
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
+// Statische Dateien aus dem public-Ordner bereitstellen
+app.use(express.static('public'));
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -31,8 +37,8 @@ app.use('/', authRoutes);
 app.use('/api/locations', uploadsRoutes);
 app.use('/api', locationsRoutes);
 
-// Default route
-app.get('/', (req, res) => {
+// API Info Route
+app.get('/api-info', (req, res) => {
   res.send(`
     <html>
       <head>
@@ -50,21 +56,21 @@ app.get('/', (req, res) => {
       </head>
       <body>
         <h1>API Server</h1>
-        <p>Welcome to the API server. Please log in to access API endpoints.</p>
-        <p><a href="/login">Go to Login</a></p>
+        <p>Willkommen zum API-Server. Bitte melden Sie sich an, um auf die API-Endpunkte zuzugreifen.</p>
+        <p><a href="/">Zurück zur Hauptseite</a></p>
         
-        <h2>Available Endpoints:</h2>
+        <h2>Verfügbare Endpunkte:</h2>
         <ul>
-          <li class="endpoint"><span class="method">GET</span> /login - Login page</li>
-          <li class="endpoint"><span class="method">POST</span> /verify-access - Verify access code</li>
-          <li class="endpoint"><span class="method">GET</span> /api/locations - Get all locations</li>
-          <li class="endpoint"><span class="method">GET</span> /api/locations/:id - Get location by ID</li>
-          <li class="endpoint"><span class="method">POST</span> /api/locations - Add new location</li>
-          <li class="endpoint"><span class="method">PUT</span> /api/locations/:id - Update location</li>
-          <li class="endpoint"><span class="method">DELETE</span> /api/locations/:id - Delete location</li>
-          <li class="endpoint"><span class="method">POST</span> /api/locations/:id/upload - Upload image for location</li>
-          <li class="endpoint"><span class="method">GET</span> /api/locations/:id/image - Get image for location</li>
-          <li class="endpoint"><span class="method">GET</span> /api/locations/:id/image?thumb=true - Get thumbnail for location</li>
+          <li class="endpoint"><span class="method">GET</span> /login - Anmeldeseite</li>
+          <li class="endpoint"><span class="method">POST</span> /verify-access - Zugangscode überprüfen</li>
+          <li class="endpoint"><span class="method">GET</span> /api/locations - Alle Standorte abrufen</li>
+          <li class="endpoint"><span class="method">GET</span> /api/locations/:id - Standort nach ID abrufen</li>
+          <li class="endpoint"><span class="method">POST</span> /api/locations - Neuen Standort hinzufügen</li>
+          <li class="endpoint"><span class="method">PUT</span> /api/locations/:id - Standort aktualisieren</li>
+          <li class="endpoint"><span class="method">DELETE</span> /api/locations/:id - Standort löschen</li>
+          <li class="endpoint"><span class="method">POST</span> /api/locations/:id/upload - Bild für Standort hochladen</li>
+          <li class="endpoint"><span class="method">GET</span> /api/locations/:id/image - Bild für Standort abrufen</li>
+          <li class="endpoint"><span class="method">GET</span> /api/locations/:id/image?thumb=true - Thumbnail für Standort abrufen</li>
         </ul>
       </body>
     </html>
