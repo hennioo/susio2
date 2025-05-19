@@ -4,8 +4,8 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
-// Base URL for API (using the public Replit URL)
-const API_BASE_URL = 'https://database-driven-setup-henningdelius.replit.app';
+// Base URL for API (using local server URL)
+const API_BASE_URL = 'http://localhost:10000';
 
 // Access code for authentication (from environment variable)
 const ACCESS_CODE = process.env.ACCESS_CODE;

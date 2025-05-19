@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const { pool, testDatabaseConnection, createLocationsTable, createCoupleImageTable, initializeDatabase } = require('./db');
 const authRoutes = require('./routes/auth');
 const locationsRoutes = require('./routes/locations');
+const uploadsRoutes = require('./routes/uploads');
 
 // Load environment variables
 dotenv.config();
@@ -27,6 +28,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/', authRoutes);
+app.use('/api/locations', uploadsRoutes);
 app.use('/api', locationsRoutes);
 
 // Default route
@@ -60,6 +62,9 @@ app.get('/', (req, res) => {
           <li class="endpoint"><span class="method">POST</span> /api/locations - Add new location</li>
           <li class="endpoint"><span class="method">PUT</span> /api/locations/:id - Update location</li>
           <li class="endpoint"><span class="method">DELETE</span> /api/locations/:id - Delete location</li>
+          <li class="endpoint"><span class="method">POST</span> /api/locations/:id/upload - Upload image for location</li>
+          <li class="endpoint"><span class="method">GET</span> /api/locations/:id/image - Get image for location</li>
+          <li class="endpoint"><span class="method">GET</span> /api/locations/:id/image?thumb=true - Get thumbnail for location</li>
         </ul>
       </body>
     </html>
