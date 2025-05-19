@@ -8,8 +8,8 @@ const imageProcessor = require('./imageProcessor');
 // Load environment variables
 dotenv.config();
 
-// Maximum file size in bytes (default 5MB)
-const MAX_FILE_SIZE = parseInt(process.env.MAX_IMAGE_SIZE || '5242880', 10); // 5MB
+// Maximum file size in bytes (default 10MB)
+const MAX_FILE_SIZE = parseInt(process.env.MAX_IMAGE_SIZE || '10485760', 10); // 10MB
 
 // Configure multer for memory storage
 const upload = multer({

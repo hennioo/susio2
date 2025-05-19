@@ -15,8 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '15mb' })); // Erhöhte Größenbegrenzung für JSON-Daten
+app.use(express.urlencoded({ extended: true, limit: '15mb' })); // Erhöhte Größenbegrenzung für URL-kodierte Daten
 app.use(cookieParser());
 app.use(cors());
 
