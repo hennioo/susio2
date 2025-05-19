@@ -142,7 +142,6 @@ async function createCoupleImageTable() {
 
 /**
  * Initializes the database by creating required tables if they don't exist
- * and performing sample queries for testing
  */
 async function initializeDatabase() {
   console.log('Initializing database...');
@@ -152,66 +151,20 @@ async function initializeDatabase() {
     const connectionSuccessful = await testDatabaseConnection();
     if (!connectionSuccessful) {
       console.error('❌ Cannot proceed with database initialization due to connection error');
-      return;
+      return false;
     }
     
     // Create tables if they don't exist
     await createLocationsTable();
     await createCoupleImageTable();
     
-    // Test sample queries
-    await testSampleQueries();
-    
     console.log('✅ Database initialization completed successfully');
+    return true;
   } catch (error) {
     console.error('❌ Error during database initialization:');
     console.error(error.message);
     console.error(error.stack);
-  }
-}
-
-/**
- * Performs sample queries to test database functionality
- */
-async function testSampleQueries() {
-  console.log('Testing sample queries...');
-  const client = await pool.connect();
-  
-  try {
-    // Select all locations
-    console.log('Querying all locations...');
-    const result = await client.query('SELECT * FROM locations');
-    console.log(`Found ${result.rows.length} locations in the database`);
-    
-    // If no locations found, insert a sample location
-    if (result.rows.length === 0) {
-      console.log('No locations found, inserting a sample location...');
-      
-      await client.query(`
-        INSERT INTO locations (
-          title, description, latitude, longitude, date
-        ) VALUES (
-          'Sample Location', 
-          'This is a sample location for testing purposes', 
-          52.520008, 
-          13.404954, 
-          '2023-07-15'
-        )
-      `);
-      
-      console.log('✅ Sample location inserted successfully');
-      
-      // Verify the insertion
-      const verifyResult = await client.query('SELECT * FROM locations');
-      console.log(`Now found ${verifyResult.rows.length} locations in the database`);
-    }
-  } catch (error) {
-    console.error('❌ Error during sample queries:');
-    console.error(error.message);
-    console.error(error.stack);
-    throw error;
-  } finally {
-    client.release();
+    return false;
   }
 }
 
@@ -222,14 +175,5 @@ module.exports = {
   tableExists,
   createLocationsTable,
   createCoupleImageTable,
-  initializeDatabase,
-  testSampleQueries
+  initializeDatabase
 };
-
-// If this file is run directly (not imported), initialize the database
-if (require.main === module) {
-  initializeDatabase().catch(error => {
-    console.error('Failed to initialize database:', error);
-    process.exit(1);
-  });
-}

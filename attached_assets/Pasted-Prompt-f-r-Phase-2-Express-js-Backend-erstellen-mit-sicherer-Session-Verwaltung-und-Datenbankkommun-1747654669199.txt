@@ -1,0 +1,58 @@
+Prompt für Phase 2: Express.js Backend erstellen mit sicherer Session-Verwaltung und Datenbankkommunikation
+
+⸻
+
+Ich möchte ein sauberes Express.js-Backend aufbauen, das meine bestehende Datenbankanbindung verwendet. Die Datenbankverbindung aus Phase 1 ist bereits vorhanden und funktioniert über pg.Pool mit SSL, Logging und automatischer Tabellenerstellung.
+
+Ziel von Phase 2:
+Das Express-Backend soll mit API-Routen auf die PostgreSQL-Datenbank zugreifen, Sessions verwalten und ein Login-System mit Zugangscode (aus Umgebungsvariable) bereitstellen. Das Frontend ist bereits vorhanden und wird später angeschlossen. Ich arbeite in Replit.
+
+⸻
+
+Technische Anforderungen:
+	1.	Express.js Server aufsetzen
+	•	Port aus Umgebungsvariable PORT, fallback auf 10000
+	•	Middleware: express.json(), cookie-parser
+	2.	Session-Verwaltung
+	•	Temporär in-memory Map (Map()), kein persistenter Speicher (da Replit Free)
+	•	Session-ID via Cookie oder URL (sessionId)
+	•	Nur gültige Sessions dürfen API-Endpunkte aufrufen
+	3.	Login-System
+	•	GET /login liefert eine einfache HTML-Seite mit Login-Formular
+	•	POST /verify-access prüft Zugangscode (ACCESS_CODE aus Umgebungsvariable)
+	•	Bei Erfolg: Session-ID wird als gültig markiert
+	4.	API-Endpunkte
+	•	Nur mit gültiger Session-ID zugänglich
+	•	GET /api/locations → alle Einträge aus Tabelle locations als JSON
+	•	GET /api/locations/:id → Detaildaten zu einem Ort (id, title, description, coords, date)
+	•	POST /api/locations → neuen Ort anlegen (Multipart mit Bild, wird in Base64 gespeichert)
+	•	PUT /api/locations/:id → Ort aktualisieren
+	•	DELETE /api/locations/:id → Ort löschen
+	5.	Fehler- und Logging-Handling
+	•	Jeder Request soll sauber mit Log (z. B. console.log) dokumentiert werden
+	•	Fehlerhafte Anfragen sollen eine verständliche JSON-Antwort zurückgeben
+	6.	Verwendung bestehender Verbindung
+	•	Der Code soll auf pool aus Phase 1 zugreifen (z. B. via require('./db').pool)
+	•	Kein harter Zugriff auf Umgebungsvariablen mehr im Backend, alles über .env und process.env
+
+⸻
+
+Besonderheiten für Replit:
+	•	Die Umgebungsvariablen (DATABASE_URL, ACCESS_CODE) sind bereits in Replit gesetzt
+	•	Nutze process.env.ACCESS_CODE innerhalb von /verify-access, niemals im Klartext hardcoden
+	•	Du kannst einfache HTML-Routen direkt mit res.send() liefern, z. B. für Login
+
+⸻
+
+Wichtig:
+Der Code soll modular aufgebaut sein, z. B.:
+	•	server.js (Startpunkt)
+	•	routes/locations.js (API-Endpunkte)
+	•	auth.js (Session-Logik)
+	•	db.js (aus Phase 1)
+
+Baue bitte Phase 2 so, dass es vollständig testbar ist, mit vielen Debug-Ausgaben (Log bei jeder Route, bei DB-Zugriffen, bei Fehlern etc.).
+
+⸻
+
+Sobald der Express-Server läuft und die API korrekt antwortet, ist Phase 2 abgeschlossen.
