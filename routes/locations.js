@@ -237,7 +237,7 @@ router.put('/locations/:id', upload.single('image'), async (req, res) => {
 
 /**
  * DELETE /api/locations/:id
- * Deletes a location by ID
+ * Deletes a location by ID including all associated image data
  */
 router.delete('/locations/:id', async (req, res) => {
   const { id } = req.params;
@@ -246,8 +246,8 @@ router.delete('/locations/:id', async (req, res) => {
   try {
     const client = await pool.connect();
     try {
-      // Check if location exists
-      const checkResult = await client.query('SELECT id FROM locations WHERE id = $1', [id]);
+      // Check if location exists and get its image data
+      const checkResult = await client.query('SELECT id, image_name, image_data, thumbnail_data FROM locations WHERE id = $1', [id]);
       
       if (checkResult.rows.length === 0) {
         console.log(`❌ Location with ID ${id} not found for deletion`);
@@ -257,13 +257,20 @@ router.delete('/locations/:id', async (req, res) => {
         });
       }
       
-      // Delete location
+      // Log image data that will be deleted
+      const location = checkResult.rows[0];
+      if (location.image_name || location.image_data || location.thumbnail_data) {
+        console.log(`🖼️ Removing image data for location ${id}: ${location.image_name || 'unnamed'}`);
+      }
+      
+      // Delete location including all image data
       await client.query('DELETE FROM locations WHERE id = $1', [id]);
       
-      console.log(`✅ Deleted location with ID: ${id}`);
+      console.log(`✅ Deleted location with ID: ${id} and all associated image data`);
       res.json({
         error: false,
-        message: `Location with ID ${id} deleted successfully`
+        message: `Location with ID ${id} deleted successfully`,
+        success: true
       });
     } finally {
       client.release();

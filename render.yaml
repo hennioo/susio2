@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: node-postgresql-locations-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ACCESS_CODE
+        sync: false
+      - key: PORT
+        value: 10000
+    healthCheckPath: /
