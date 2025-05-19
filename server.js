@@ -86,8 +86,8 @@ async function startServer() {
       process.exit(1);
     }
     
-    // Start the server
-    app.listen(PORT, () => {
+    // Start the server - explicitly bind to 0.0.0.0 to allow external access
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`📝 API documentation available at http://localhost:${PORT}/`);
       console.log(`🔐 Login page available at http://localhost:${PORT}/login`);
