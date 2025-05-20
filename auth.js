@@ -75,6 +75,26 @@ function validateSession(sessionId) {
 }
 
 /**
+ * Invalidates a session by removing it from the sessions map
+ * @param {string} sessionId - The session ID to invalidate
+ * @returns {boolean} True if the session was invalidated, false otherwise
+ */
+function invalidateSession(sessionId) {
+  if (!sessionId) {
+    return false;
+  }
+  
+  if (sessions.has(sessionId)) {
+    sessions.delete(sessionId);
+    console.log(`✅ Session invalidated: ${sessionId}`);
+    return true;
+  }
+  
+  console.log(`❌ Session not found to invalidate: ${sessionId}`);
+  return false;
+}
+
+/**
  * Authentication middleware for Express
  * Checks if the request has a valid session
  */
@@ -101,6 +121,7 @@ module.exports = {
   validateAccessCode,
   createSession,
   validateSession,
+  invalidateSession,
   requireAuth,
   sessions // Export for debugging purposes
 };

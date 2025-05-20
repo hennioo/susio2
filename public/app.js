@@ -16,11 +16,22 @@ async function checkAuthStatus() {
         if (response.ok) {
             window.isAuthenticated = true;
             mainContainer.style.display = 'flex';
+            authContainer.style.display = 'none';
+            logoutContainer.style.display = 'block';
             fetchLocations();
             fetchStats(); // Lade auch die Statistiken
+        } else {
+            window.isAuthenticated = false;
+            mainContainer.style.display = 'none';
+            authContainer.style.display = 'block';
+            logoutContainer.style.display = 'none';
         }
     } catch (error) {
         console.log('Noch nicht authentifiziert oder API nicht erreichbar');
+        window.isAuthenticated = false;
+        mainContainer.style.display = 'none';
+        authContainer.style.display = 'block';
+        logoutContainer.style.display = 'none';
     }
 }
 
@@ -164,12 +175,48 @@ async function login() {
             
             showAuthMessage('Erfolgreich angemeldet!', false);
             mainContainer.style.display = 'flex';
+            authContainer.style.display = 'none';
+            logoutContainer.style.display = 'block';
             fetchLocations();
         } else {
             showAuthMessage(data.message || 'Ungültiger Zugangscode.', true);
         }
     } catch (error) {
         showAuthMessage(`Fehler bei der Anmeldung: ${error.message}`, true);
+    }
+}
+
+/**
+ * Logout-Funktion - Benutzer abmelden und Session löschen
+ */
+async function logout() {
+    try {
+        const response = await fetch(`${API_URL}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && !data.error) {
+            // Authentifizierungsstatus zurücksetzen
+            window.isAuthenticated = false;
+            
+            // UI zurücksetzen auf Login-Ansicht
+            mainContainer.style.display = 'none';
+            authContainer.style.display = 'block';
+            logoutContainer.style.display = 'none';
+            
+            // Erfolgsmeldung anzeigen
+            showAuthMessage('Erfolgreich abgemeldet.', false);
+            
+            // Cookie manuell löschen (als Fallback)
+            document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        } else {
+            showAuthMessage(data.message || 'Fehler beim Abmelden.', true);
+        }
+    } catch (error) {
+        showAuthMessage(`Fehler beim Abmelden: ${error.message}`, true);
     }
 }
 
@@ -304,8 +351,14 @@ async function fetchLocations() {
     }
 }
 
+// Globale Variable zur Speicherung aller Standorte
+let allLocations = [];
+
 // Standorte anzeigen
 function displayLocations(locations) {
+    // Alle Standorte speichern für Suchfunktion
+    allLocations = locations;
+    
     locationsList.innerHTML = '';
     
     if (!locations || locations.length === 0) {
@@ -440,4 +493,126 @@ function showFormMessage(message, isError) {
 function showLocationsMessage(message, isError) {
     locationsMessage.textContent = message;
     locationsMessage.className = isError ? 'error-message' : 'success-message';
+}
+
+/**
+ * Filtert die Standorte basierend auf dem Suchbegriff
+ */
+function filterLocations() {
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    
+    if (!searchTerm) {
+        // Wenn das Suchfeld leer ist, alle Standorte anzeigen
+        displayLocations(allLocations);
+        return;
+    }
+    
+    // Standorte filtern, deren Titel oder Beschreibung den Suchbegriff enthalten
+    const filteredLocations = allLocations.filter(location => {
+        const titleMatch = location.title && location.title.toLowerCase().includes(searchTerm);
+        const descriptionMatch = location.description && location.description.toLowerCase().includes(searchTerm);
+        return titleMatch || descriptionMatch;
+    });
+    
+    // Gefilterte Standorte anzeigen
+    locationsList.innerHTML = '';
+    
+    if (filteredLocations.length === 0) {
+        locationsList.innerHTML = '<p>Keine passenden Standorte gefunden.</p>';
+    } else {
+        // Original displayLocations-Funktion verwendet nur den Anzeigeteil
+        filteredLocations.forEach(location => {
+            const card = document.createElement('div');
+            card.className = 'location-card';
+
+            // Bild hinzufügen, falls verfügbar
+            if (location.has_image || location.image_type) {
+                const img = document.createElement('img');
+                img.className = 'location-image';
+                img.alt = location.title;
+                
+                // Immer Thumbnails verwenden in der Übersicht
+                img.src = `${API_URL}/api/locations/${location.id}/image?thumb=true`;
+                
+                // Cookie für die Bildanfrage hinzufügen
+                img.setAttribute('crossorigin', 'use-credentials');
+                
+                // Error-Handler für Bilder
+                img.onerror = () => {
+                    img.src = '/placeholder.svg';
+                    img.alt = 'Kein Bild vorhanden';
+                };
+                
+                card.appendChild(img);
+            } else {
+                // Wenn kein Bild vorhanden ist, zeige das Platzhalterbild
+                const img = document.createElement('img');
+                img.className = 'location-image';
+                img.alt = 'Kein Bild vorhanden';
+                img.src = '/placeholder.svg';
+                card.appendChild(img);
+            }
+
+            // Informationen hinzufügen
+            const info = document.createElement('div');
+            info.className = 'location-info';
+            
+            const title = document.createElement('h3');
+            title.textContent = location.title;
+            
+            const date = document.createElement('p');
+            date.textContent = `Datum: ${location.date || 'Nicht angegeben'}`;
+            
+            // Beschreibung hinzufügen
+            if (location.description) {
+                const description = document.createElement('p');
+                description.className = 'location-description';
+                description.textContent = location.description;
+                description.style.fontSize = '0.9em';
+                description.style.color = '#666';
+                description.style.marginTop = '8px';
+                description.style.marginBottom = '8px';
+                info.appendChild(title);
+                info.appendChild(description);
+                info.appendChild(date);
+            } else {
+                info.appendChild(title);
+                info.appendChild(date);
+            }
+            
+            const actions = document.createElement('div');
+            actions.className = 'location-actions';
+            
+            // Löschen-Button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Löschen';
+            deleteBtn.onclick = () => deleteLocation(location.id);
+
+            // Bild-Anzeige-Button
+            const viewImgBtn = document.createElement('button');
+            viewImgBtn.textContent = 'Vollbild';
+            viewImgBtn.style.marginRight = '5px';
+            viewImgBtn.onclick = () => {
+                window.open(`${API_URL}/api/locations/${location.id}/image`, '_blank');
+            };
+            
+            if (location.has_image || location.image_type) {
+                actions.appendChild(viewImgBtn);
+            }
+            
+            actions.appendChild(deleteBtn);
+            info.appendChild(actions);
+            card.appendChild(info);
+            
+            locationsList.appendChild(card);
+        });
+    }
+}
+
+/**
+ * Löscht den Suchbegriff und zeigt alle Standorte an
+ */
+function clearSearch() {
+    searchInput.value = '';
+    displayLocations(allLocations);
 }
