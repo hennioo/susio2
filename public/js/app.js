@@ -5,11 +5,30 @@ let allLocations = [];
 document.addEventListener('DOMContentLoaded', () => {
     // Karte initialisieren
     if (document.getElementById('map')) {
+        // Prüfen, ob wir angemeldet sind, bevor wir die Kartenansicht initialisieren
+        if (!isAuthenticated()) {
+            // Diese Prüfung ist redundant zu der in auth.js, aber als zusätzliche Sicherheit
+            console.warn("Nicht authentifiziert. Weiterleitung zur Login-Seite...");
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // Erfolgsmeldung anzeigen
+        showGlobalMessage('Willkommen bei susio!', 'success');
+        
+        // Initialisierung der Karte und UI-Komponenten
         initMap();
         
         // Standorte laden
         loadLocations().then(locations => {
             allLocations = locations;
+            
+            // Benachrichtigung über geladene Standorte (nur wenn Standorte vorhanden)
+            if (locations && locations.length > 0) {
+                showGlobalMessage(`${locations.length} Standorte erfolgreich geladen.`, 'info', 2000);
+            }
+        }).catch(error => {
+            showGlobalMessage(`Fehler beim Laden der Standorte: ${error.message}`, 'error');
         });
         
         // Sidebar-Events
@@ -90,6 +109,15 @@ function initializeLocationForm() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        // Prüfen, ob der Benutzer noch angemeldet ist, bevor wir fortfahren
+        if (!isAuthenticated()) {
+            showGlobalMessage('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.', 'warning');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            return;
+        }
+        
         const title = document.getElementById('location-title').value;
         const description = document.getElementById('location-description').value;
         const date = document.getElementById('location-date').value;
@@ -102,6 +130,7 @@ function initializeLocationForm() {
         
         if (!lat || !lng) {
             showFormFeedback(feedback, 'Bitte wähle einen Ort auf der Karte aus.', 'error');
+            showGlobalMessage('Bitte wähle zuerst einen Ort auf der Karte aus.', 'warning');
             return;
         }
         
@@ -110,6 +139,9 @@ function initializeLocationForm() {
         const originalBtnText = submitBtn.innerHTML;
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Speichern...';
+        
+        // Globales Lade-Feedback anzeigen
+        showGlobalMessage('Standort wird gespeichert...', 'info', 0);
         
         try {
             // Standort-Daten senden
@@ -139,12 +171,18 @@ function initializeLocationForm() {
             
             // Bild hochladen, falls ausgewählt
             if (imageInput.files && imageInput.files[0]) {
+                // Lade-Info aktualisieren
+                showGlobalMessage('Bild wird hochgeladen...', 'info', 0);
+                
                 const imageFile = imageInput.files[0];
                 await uploadImage(locationId, imageFile);
             }
             
             // Erfolg-Feedback und Formular schließen
             showFormFeedback(feedback, 'Standort erfolgreich gespeichert!', 'success');
+            
+            // Globales Feedback aktualisieren
+            showGlobalMessage('Standort erfolgreich gespeichert!', 'success');
             
             // Standorte neu laden und Formular zurücksetzen
             await loadLocations();
@@ -158,6 +196,7 @@ function initializeLocationForm() {
         } catch (error) {
             console.error('Fehler beim Speichern:', error);
             showFormFeedback(feedback, `Fehler beim Speichern: ${error.message}`, 'error');
+            showGlobalMessage(`Fehler beim Speichern: ${error.message}`, 'error');
         } finally {
             // Submit-Button wiederherstellen
             submitBtn.disabled = false;
@@ -292,41 +331,87 @@ function initializeAdminArea() {
     
     // Admin-Bereich öffnen
     adminBtn.addEventListener('click', async () => {
-        // Admin-Statistiken laden
-        await loadAdminStats();
+        // Prüfen, ob der Nutzer noch angemeldet ist
+        if (!isAuthenticated()) {
+            showGlobalMessage('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.', 'warning');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            return;
+        }
         
-        // UI umschalten
-        adminContainer.style.display = 'block';
-        mapContainer.style.display = 'none';
+        // Globale Ladeanzeige
+        showGlobalMessage('Lade Admin-Bereich...', 'info', 0);
         
-        // Sidebar schließen
-        document.getElementById('sidebar').classList.remove('active');
+        try {
+            // Admin-Statistiken laden
+            await loadAdminStats();
+            
+            // UI umschalten
+            adminContainer.style.display = 'block';
+            mapContainer.style.display = 'none';
+            
+            // Sidebar schließen
+            document.getElementById('sidebar').classList.remove('active');
+            
+            // Ladeanzeige ausblenden und Erfolg melden
+            showGlobalMessage('Admin-Bereich geladen', 'success', 2000);
+        } catch (error) {
+            showGlobalMessage(`Fehler beim Laden des Admin-Bereichs: ${error.message}`, 'error');
+        }
     });
     
     // Zurück zur Karte
     backToMapBtn.addEventListener('click', () => {
         adminContainer.style.display = 'none';
         mapContainer.style.display = 'block';
+        showGlobalMessage('Kartenansicht wiederhergestellt', 'info', 1500);
     });
     
     // Profilbild-Vorschau
     profileUploadInput.addEventListener('change', () => {
         if (profileUploadInput.files && profileUploadInput.files[0]) {
+            // Datei-Größe und Typ prüfen
+            const file = profileUploadInput.files[0];
+            
+            // Maximale Dateigröße: 5MB
+            if (file.size > 5 * 1024 * 1024) {
+                showGlobalMessage('Das Bild ist zu groß. Maximale Größe: 5 MB', 'warning');
+                profileUploadInput.value = '';
+                return;
+            }
+            
+            // Nur Bilder erlauben
+            if (!file.type.startsWith('image/')) {
+                showGlobalMessage('Bitte wähle ein gültiges Bildformat (JPEG, PNG, etc.)', 'warning');
+                profileUploadInput.value = '';
+                return;
+            }
+            
+            // Bildvorschau anzeigen
             const reader = new FileReader();
             reader.onload = function(e) {
                 profilePreview.src = e.target.result;
+                showGlobalMessage('Bildvorschau aktualisiert. Klicke auf "Speichern", um zu bestätigen.', 'info', 3000);
             };
-            reader.readAsDataURL(profileUploadInput.files[0]);
+            reader.readAsDataURL(file);
         }
     });
     
     // Profilbild speichern
     saveProfileBtn.addEventListener('click', async () => {
         if (!profileUploadInput.files || !profileUploadInput.files[0]) {
+            showGlobalMessage('Bitte wähle zuerst ein Bild aus.', 'warning');
             showFormFeedback(document.getElementById('profile-feedback'), 
                            'Bitte wähle ein Bild aus', 'error');
             return;
         }
+        
+        // Zeige Lade-Animation
+        saveProfileBtn.disabled = true;
+        const originalBtnText = saveProfileBtn.textContent;
+        saveProfileBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Speichern...';
+        showGlobalMessage('Profilbild wird verarbeitet...', 'info', 0);
         
         const file = profileUploadInput.files[0];
         const formData = new FormData();
@@ -343,13 +428,26 @@ function initializeAdminArea() {
                 // Profilbild überall aktualisieren
                 updateProfileImage(e.target.result);
                 
+                // Feedback anzeigen
                 showFormFeedback(document.getElementById('profile-feedback'), 
                                'Profilbild erfolgreich gespeichert', 'success');
+                               
+                // Globales Feedback
+                showGlobalMessage('Profilbild erfolgreich aktualisiert!', 'success');
+                
+                // Button zurücksetzen
+                saveProfileBtn.disabled = false;
+                saveProfileBtn.textContent = originalBtnText;
             };
             reader.readAsDataURL(file);
         } catch (error) {
             showFormFeedback(document.getElementById('profile-feedback'), 
                            `Fehler beim Speichern: ${error.message}`, 'error');
+            showGlobalMessage(`Fehler beim Speichern des Profilbilds: ${error.message}`, 'error');
+            
+            // Button zurücksetzen
+            saveProfileBtn.disabled = false;
+            saveProfileBtn.textContent = originalBtnText;
         }
     });
     
@@ -360,16 +458,37 @@ function initializeAdminArea() {
 // Admin-Statistiken laden
 async function loadAdminStats() {
     try {
+        // Überprüfen, ob wir authentifiziert sind
+        if (!isAuthenticated()) {
+            showGlobalMessage('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.', 'warning');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            return;
+        }
+        
         const response = await fetch(`${API_URL}/api/stats`, {
             method: 'GET',
             credentials: 'include'
         });
         
         if (!response.ok) {
+            if (response.status === 401) {
+                // Unautorisierter Zugriff - Sitzung abgelaufen
+                showGlobalMessage('Sitzung abgelaufen. Bitte melde dich erneut an.', 'warning');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
             throw new Error('Fehler beim Laden der Statistiken');
         }
         
         const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.message || 'Fehler beim Laden der Statistiken');
+        }
         
         // Statistik-Werte anzeigen
         document.getElementById('total-locations').textContent = data.data.totalLocations || 0;
@@ -403,6 +522,9 @@ async function loadAdminStats() {
                     document.getElementById('admin-container').style.display = 'none';
                     document.getElementById('map').style.display = 'block';
                     
+                    // Globale Nachricht
+                    showGlobalMessage(`Zeige Standort "${location.title}"`, 'info', 2000);
+                    
                     // Suche den Standort in allLocations
                     const locationDetails = allLocations.find(loc => loc.id === location.id);
                     if (locationDetails) {
@@ -415,6 +537,8 @@ async function loadAdminStats() {
                             map.setView(marker.getLatLng(), 14);
                             selectedMarker = marker;
                         }
+                    } else {
+                        showGlobalMessage('Standortdetails nicht verfügbar. Aktualisiere die Seite.', 'warning');
                     }
                 });
                 
@@ -423,8 +547,12 @@ async function loadAdminStats() {
         } else {
             recentLocationsList.innerHTML = '<div class="p-3 text-center text-muted">Keine Standorte vorhanden</div>';
         }
+        
+        return data;
     } catch (error) {
         console.error('Fehler beim Laden der Admin-Statistiken:', error);
+        showGlobalMessage(`Fehler beim Laden der Statistiken: ${error.message}`, 'error');
+        throw error;
     }
 }
 
