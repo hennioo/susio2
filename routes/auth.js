@@ -53,6 +53,7 @@ router.get('/login', (req, res) => {
                 headers: {
                   'Content-Type': 'application/json'
                 },
+                credentials: 'include', // Wichtig für das Senden und Empfangen von Cookies
                 body: JSON.stringify({ accessCode })
               });
               
@@ -105,10 +106,11 @@ router.post('/verify-access', (req, res) => {
   if (validateAccessCode(accessCode)) {
     const sessionId = createSession();
     
-    // Set session cookie
+    // Set session cookie with secure and SameSite settings for cross-origin requests
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
-      // secure: true, // Enable in production with HTTPS
+      secure: true, // Required for HTTPS (Render)
+      sameSite: 'None', // Allow cross-site cookie sharing
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
     
