@@ -6,6 +6,7 @@ const { pool, testDatabaseConnection, createLocationsTable, createCoupleImageTab
 const authRoutes = require('./routes/auth');
 const locationsRoutes = require('./routes/locations');
 const uploadsRoutes = require('./routes/uploads');
+const statsRoutes = require('./routes/stats');
 
 // Load environment variables
 dotenv.config();
@@ -36,6 +37,7 @@ app.use((req, res, next) => {
 app.use('/', authRoutes);
 app.use('/api/locations', uploadsRoutes);
 app.use('/api', locationsRoutes);
+app.use('/api', statsRoutes);
 
 // API Info Route
 app.get('/api-info', (req, res) => {
