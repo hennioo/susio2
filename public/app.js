@@ -1,7 +1,8 @@
 // Backend-URL (auf Render gehostet)
 // Passe diese URL an dein auf Render gehostetes Backend an
 const API_URL = 'https://susio2.onrender.com';
-let sessionCookie = null;
+// Wir benötigen keine manuelle Session-Cookie-Verwaltung mehr,
+// da wir jetzt vollständig auf die automatische Browser-Cookie-Verwaltung setzen
 
 // DOM Elemente
 const accessCodeInput = document.getElementById('access-code');
@@ -87,9 +88,9 @@ async function createLocation(event) {
         const createResponse = await fetch(`${API_URL}/api/locations`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Cookie': sessionCookie
+                'Content-Type': 'application/json'
             },
+            credentials: 'include', // Wichtig für Cookie-Übertragung
             body: JSON.stringify(locationData)
         });
 
@@ -134,9 +135,9 @@ async function uploadImage(locationId, imageFile) {
         const uploadResponse = await fetch(`${API_URL}/api/locations/${locationId}/upload`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Cookie': sessionCookie
+                'Content-Type': 'application/json'
             },
+            credentials: 'include', // Wichtig für Cookie-Übertragung
             body: JSON.stringify({
                 imageData: base64Image,
                 fileName: imageFile.name
@@ -176,9 +177,7 @@ async function fetchLocations() {
     try {
         const response = await fetch(`${API_URL}/api/locations`, {
             method: 'GET',
-            headers: {
-                'Cookie': sessionCookie
-            }
+            credentials: 'include' // Wichtig für das Senden der Cookies
         });
 
         const data = await response.json();
@@ -278,9 +277,7 @@ async function deleteLocation(id) {
     try {
         const response = await fetch(`${API_URL}/api/locations/${id}`, {
             method: 'DELETE',
-            headers: {
-                'Cookie': sessionCookie
-            }
+            credentials: 'include' // Wichtig für Cookie-Übertragung
         });
 
         const data = await response.json();
