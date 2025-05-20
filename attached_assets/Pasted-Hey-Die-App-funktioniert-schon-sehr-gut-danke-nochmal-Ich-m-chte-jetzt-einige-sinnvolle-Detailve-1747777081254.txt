@@ -1,0 +1,46 @@
+Hey! Die App funktioniert schon sehr gut – danke nochmal! Ich möchte jetzt einige sinnvolle Detailverbesserungen umsetzen, damit die Website runder wird und produktionsreif ist. Bitte setze folgende Punkte um:
+
+---
+
+📦 **1. Speicherverbrauch der Datenbank anzeigen**
+- Ergänze im Admin-Panel einen weiteren Wert:
+  - `databaseSizeMB`: Gesamter belegter Speicher in MB
+- Nutze dafür (je nach verwendeter DB) z. B. `pg_database_size()` in PostgreSQL
+- Der Wert soll beim Laden der Seite im Admin-Panel erscheinen, mit dem Label:  
+  → `Datenbankgröße: 3.8 MB` (Beispiel)
+
+---
+
+🖼️ **2. Fallback-Bild anzeigen, wenn kein Bild vorhanden ist**
+- Wenn beim Aufruf eines Standorts kein Bild oder kein Thumbnail gefunden wird (z. B. HTTP 404), zeige ein Standard-Platzhalterbild mit dem Text: „Kein Bild vorhanden“.
+- Beispielbild kann lokal gespeichert sein (`/public/placeholder.png`) oder ein generischer grauer Rahmen mit Text.
+- Die UI soll nicht komplett leer bleiben, wenn kein Bild existiert.
+
+---
+
+🗑️ **3. Bestätigungsabfrage beim Löschen eines Standorts**
+- Vor dem Löschen eines Standorts soll ein Bestätigungsdialog erscheinen.
+- Text z. B.: „Möchtest du diesen Standort wirklich löschen?“
+- Nur wenn der Nutzer bestätigt, soll der `DELETE`-Aufruf an die API gesendet werden.
+
+---
+
+📅 **4. Aktuelles Datum vorauswählen im Upload-Formular**
+- Wenn man einen neuen Standort erstellt, soll das Datumfeld automatisch mit dem heutigen Datum vorausgefüllt sein (im Format `YYYY-MM-DD`).
+- Die manuelle Eingabe bleibt weiterhin möglich.
+
+---
+
+📝 **5. Beschreibung in der Standortübersicht anzeigen**
+- Momentan wird die Beschreibung der Standorte in der Übersicht nicht angezeigt.
+- Bitte zeige sie unter dem Titel oder dem Bild an – entweder als separaten Paragraph oder in kleinerer Schrift.
+- Sie soll sichtbar sein, ohne dass man erst auf „Vollbild“ klicken muss.
+
+---
+
+📌 Wichtig:
+- Bestehende Session-Validierung und `credentials: 'include'` sollen beibehalten werden.
+- Änderungen bitte im aktuellen Design-Stil integrieren.
+- Ich möchte alle Änderungen direkt im Frontend sehen und testen können.
+
+Danke dir! Ich freue mich auf die Umsetzung 🙂

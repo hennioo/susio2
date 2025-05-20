@@ -21,6 +21,18 @@ router.get('/stats', requireAuth, async (req, res) => {
       const imagesCountResult = await client.query('SELECT COUNT(*) as count FROM locations WHERE image_data IS NOT NULL');
       const totalImages = parseInt(imagesCountResult.rows[0].count);
       
+      // Get database size in MB
+      const dbSizeQuery = `
+        SELECT 
+          pg_size_pretty(pg_database_size(current_database())) as pretty_size,
+          pg_database_size(current_database()) / (1024 * 1024) as size_mb
+        FROM pg_database 
+        WHERE datname = current_database()
+      `;
+      const dbSizeResult = await client.query(dbSizeQuery);
+      const databaseSizeMB = parseFloat(dbSizeResult.rows[0].size_mb).toFixed(2);
+      const databaseSizePretty = dbSizeResult.rows[0].pretty_size;
+      
       // Get recent locations
       const recentLocationsResult = await client.query(`
         SELECT id, title, created_at 
@@ -35,13 +47,14 @@ router.get('/stats', requireAuth, async (req, res) => {
         createdAt: row.created_at
       }));
       
-      console.log(`✅ Statistics fetched successfully: ${totalLocations} locations, ${totalImages} images`);
+      console.log(`✅ Statistics fetched successfully: ${totalLocations} locations, ${totalImages} images, DB size: ${databaseSizePretty}`);
       
       res.json({
         error: false,
         data: {
           totalLocations,
           totalImages,
+          databaseSizeMB,
           recentLocations
         }
       });

@@ -59,6 +59,7 @@ async function fetchStats() {
         // Statistiken anzeigen
         totalLocations.textContent = data.data.totalLocations;
         totalImages.textContent = data.data.totalImages;
+        document.getElementById('database-size').textContent = data.data.databaseSizeMB;
         
         // Liste der letzten Standorte leeren und neu befüllen
         recentLocationsList.innerHTML = '';
@@ -110,6 +111,11 @@ const refreshStatsButton = document.getElementById('refresh-stats-button');
 document.addEventListener('DOMContentLoaded', () => {
     // Authentifizierungsstatus prüfen beim Laden
     checkAuthStatus();
+    
+    // Heutiges Datum im Formular vorausfüllen
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+    document.getElementById('date').value = formattedDate;
 
     // Event Listener hinzufügen
     loginButton.addEventListener('click', login);
@@ -311,20 +317,18 @@ function displayLocations(locations) {
             
             // Error-Handler für Bilder
             img.onerror = () => {
-                img.src = 'https://via.placeholder.com/250x150?text=Kein+Bild';
-                img.alt = 'Bild nicht verfügbar';
+                img.src = '/placeholder.svg';
+                img.alt = 'Kein Bild vorhanden';
             };
             
             card.appendChild(img);
         } else {
-            const placeholderDiv = document.createElement('div');
-            placeholderDiv.className = 'location-image';
-            placeholderDiv.style.backgroundColor = '#f0f0f0';
-            placeholderDiv.style.display = 'flex';
-            placeholderDiv.style.alignItems = 'center';
-            placeholderDiv.style.justifyContent = 'center';
-            placeholderDiv.textContent = 'Kein Bild';
-            card.appendChild(placeholderDiv);
+            // Wenn kein Bild vorhanden ist, zeige das Platzhalterbild
+            const img = document.createElement('img');
+            img.className = 'location-image';
+            img.alt = 'Kein Bild vorhanden';
+            img.src = '/placeholder.svg';
+            card.appendChild(img);
         }
 
         // Informationen hinzufügen
