@@ -1,0 +1,105 @@
+✅ Prompt: Darkmode UI mit Karte, Login, Hamburger-Menü, Admin-Bereich (für Replit AI oder ein UI-Tool)
+Erstelle mir ein vollständiges Frontend im Darkmode für eine Web-App namens „susio“, das folgende Anforderungen erfüllt. Die App besteht aus einer Login-Seite und einer Hauptansicht mit interaktiver Karte nach erfolgreichem Login.
+
+1. Login-Seite
+Vollflächiges, zentriertes Login-Formular im Darkmode.
+
+Ein Eingabefeld für den Zugangscode.
+
+Ein Login-Button.
+
+Nach erfolgreichem Login: Weiterleitung zur Hauptseite (/map).
+
+Zugriffsschutz: /map darf nicht ohne vorherigen Login erreichbar sein (Session-basiert oder via Protected Route).
+
+2. Hauptseite – Map-Ansicht
+Vollbildkarte im Hintergrund (Leaflet oder vergleichbar).
+
+Die Karte soll die gesamte Seite füllen, andere UI-Elemente sollen darüber schweben.
+
+Alle gespeicherten Orte werden mit orangenen Pins dargestellt.
+
+Klickt man auf einen Pin oder einen Ort in der Liste:
+
+Öffnet sich ein kleines Info-Fenster über der Karte (mit Titel, Bild, ggf. Beschreibung).
+
+Dieses Fenster kann wieder geschlossen werden.
+
+Oben fixierter Header:
+Links: Kleines Pärchenbild (Profilbild).
+
+Mitte: Logo mit Text „susio“, mittig und stilvoll.
+
+Rechts:
+
+Plus-Symbol zum Hinzufügen eines neuen Orts.
+
+Direkt daneben ein Hamburger-Menü-Symbol zum Öffnen des Menüs.
+
+3. Ort hinzufügen
+Klick auf das Plus-Symbol aktiviert den Ort-Hinzufügen-Modus:
+
+Symbol ändert sich zu X, um den Modus wieder zu beenden.
+
+Benutzer klickt auf einen Ort auf der Karte.
+
+Ein Overlay-Formular erscheint mit folgenden Feldern:
+
+Titel
+
+Beschreibung
+
+Datum (automatisch vorausgefüllt mit aktuellem Datum)
+
+Bild-Upload
+
+Speichern-Button
+
+4. Hamburger-Menü
+Öffnet sich von rechts als überlagerndes Slide-in-Panel, schwebend über der Karte.
+
+Inhalte:
+
+Oben: Suchfeld (live-filtert die angezeigten Orte)
+
+Scrollbarer Bereich mit:
+
+allen Orten (Titel, Thumbnail, Datum)
+
+Unten:
+
+Button „Admin-Bereich öffnen“
+
+Button „Abmelden“
+
+5. Admin-Bereich
+Wird über Button geöffnet und ersetzt die Hauptkarte.
+
+Zeigt:
+
+Gesamtanzahl Orte
+
+Gesamtanzahl Bilder
+
+Datenbankgröße in MB
+
+Letzte hinzugefügte Orte mit Datum
+
+Außerdem:
+
+Möglichkeit, zur Karte zurückzukehren
+
+Upload-Feld für das Pärchenbild (Profilbild)
+
+6. Zusätzliche Hinweise
+Darkmode durchgängig mit modernen UI-Techniken (Tailwind CSS, CSS-Variablen o. ä.).
+
+Responsives Design: Hamburger-Menü, Overlays und Formularfelder passen sich mobilen Geräten an.
+
+Nutze State-Management (entweder Vanilla JS oder Libs) für:
+
+Login-Status & Session
+
+Karteninteraktionen
+
+Overlay-Zustände (Menü, Ort hinzufügen, Admin)
