@@ -440,6 +440,10 @@ function loadProfileImage() {
     const savedImage = localStorage.getItem('profileImage');
     if (savedImage) {
         updateProfileImage(savedImage);
+    } else {
+        // Einfaches Platzhalter-Profilbild als Base64 (orange Kreis auf dunklem Hintergrund)
+        const defaultProfileImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzIyMjIyMiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0NSIgZmlsbD0iI2ZmOGMwMCIvPjxyZWN0IHg9IjUwIiB5PSIxNDAiIHdpZHRoPSIxMDAiIGhlaWdodD0iNTAiIHJ4PSIyNSIgZmlsbD0iI2ZmOGMwMCIvPjwvc3ZnPg==';
+        updateProfileImage(defaultProfileImage);
     }
 }
 
