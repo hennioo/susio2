@@ -87,14 +87,28 @@
             border-radius: 5px;
             background-color: #f9f9f9;
         }
-        .thumbnail-toggle {
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
+        .admin-stats-panel {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
-        .thumbnail-toggle input {
-            width: auto;
-            margin-right: 5px;
+        .stats-item {
+            margin-bottom: 10px;
+        }
+        #recent-locations-list {
+            padding-left: 20px;
+        }
+        #recent-locations-list li {
+            margin-bottom: 5px;
+        }
+        #refresh-stats-button {
+            margin-top: 10px;
+            background-color: #6c757d;
+        }
+        #refresh-stats-button:hover {
+            background-color: #5a6268;
         }
     </style>
 </head>
@@ -142,14 +156,32 @@
                 <button type="submit">Standort erstellen</button>
             </form>
             <div id="form-message"></div>
+            
+            <!-- Admin-Statistik-Panel -->
+            <div class="admin-stats-panel">
+                <h3>Admin-Statistiken</h3>
+                <div id="stats-loading">Lade Statistiken...</div>
+                <div id="stats-container" style="display: none;">
+                    <div class="stats-item">
+                        <strong>Gesamtanzahl Standorte:</strong> <span id="total-locations">-</span>
+                    </div>
+                    <div class="stats-item">
+                        <strong>Anzahl gespeicherter Bilder:</strong> <span id="total-images">-</span>
+                    </div>
+                    <div class="stats-item">
+                        <strong>Letzte Standorte:</strong>
+                        <ul id="recent-locations-list">
+                            <!-- Liste der 5 neuesten Standorte wird hier eingefügt -->
+                        </ul>
+                    </div>
+                </div>
+                <div id="stats-error" class="error-message"></div>
+                <button id="refresh-stats-button">Statistiken aktualisieren</button>
+            </div>
         </div>
         
         <div class="locations-container">
             <h2>Alle Standorte</h2>
-            <div class="thumbnail-toggle">
-                <input type="checkbox" id="show-thumbnails">
-                <label for="show-thumbnails">Miniaturansicht anzeigen</label>
-            </div>
             <button id="refresh-button">Aktualisieren</button>
             <div id="locations-message" class="error-message"></div>
             <div id="locations-list" class="location-grid"></div>

@@ -17,9 +17,72 @@ async function checkAuthStatus() {
             window.isAuthenticated = true;
             mainContainer.style.display = 'flex';
             fetchLocations();
+            fetchStats(); // Lade auch die Statistiken
         }
     } catch (error) {
         console.log('Noch nicht authentifiziert oder API nicht erreichbar');
+    }
+}
+
+/**
+ * Lädt Statistiken vom Backend und zeigt sie im Admin-Panel an
+ */
+async function fetchStats() {
+    if (!window.isAuthenticated) {
+        statsError.textContent = 'Bitte zuerst anmelden.';
+        statsError.style.display = 'block';
+        statsLoading.style.display = 'none';
+        statsContainer.style.display = 'none';
+        return;
+    }
+
+    // Lade-Anzeige einblenden, Fehler ausblenden
+    statsLoading.style.display = 'block';
+    statsContainer.style.display = 'none';
+    statsError.style.display = 'none';
+
+    try {
+        const response = await fetch(`${API_URL}/api/stats`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+            statsError.textContent = `Fehler beim Abrufen der Statistiken: ${data.message || 'Unbekannter Fehler'}`;
+            statsError.style.display = 'block';
+            statsLoading.style.display = 'none';
+            return;
+        }
+
+        // Statistiken anzeigen
+        totalLocations.textContent = data.data.totalLocations;
+        totalImages.textContent = data.data.totalImages;
+        
+        // Liste der letzten Standorte leeren und neu befüllen
+        recentLocationsList.innerHTML = '';
+        
+        if (data.data.recentLocations && data.data.recentLocations.length > 0) {
+            data.data.recentLocations.forEach(location => {
+                const listItem = document.createElement('li');
+                const createdDate = new Date(location.createdAt).toLocaleDateString('de-DE');
+                listItem.textContent = `${location.title} (erstellt am ${createdDate})`;
+                recentLocationsList.appendChild(listItem);
+            });
+        } else {
+            const listItem = document.createElement('li');
+            listItem.textContent = 'Keine Standorte vorhanden';
+            recentLocationsList.appendChild(listItem);
+        }
+
+        // Lade-Anzeige ausblenden, Container anzeigen
+        statsLoading.style.display = 'none';
+        statsContainer.style.display = 'block';
+    } catch (error) {
+        statsError.textContent = `Fehler beim Abrufen der Statistiken: ${error.message}`;
+        statsError.style.display = 'block';
+        statsLoading.style.display = 'none';
     }
 }
 
@@ -33,7 +96,15 @@ const formMessage = document.getElementById('form-message');
 const refreshButton = document.getElementById('refresh-button');
 const locationsMessage = document.getElementById('locations-message');
 const locationsList = document.getElementById('locations-list');
-const showThumbnails = document.getElementById('show-thumbnails');
+
+// Stats Panel Elemente
+const statsLoading = document.getElementById('stats-loading');
+const statsContainer = document.getElementById('stats-container');
+const totalLocations = document.getElementById('total-locations');
+const totalImages = document.getElementById('total-images');
+const recentLocationsList = document.getElementById('recent-locations-list');
+const statsError = document.getElementById('stats-error');
+const refreshStatsButton = document.getElementById('refresh-stats-button');
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -44,9 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loginButton.addEventListener('click', login);
     locationForm.addEventListener('submit', createLocation);
     refreshButton.addEventListener('click', fetchLocations);
-    showThumbnails.addEventListener('change', () => {
-        fetchLocations();
-    });
+    refreshStatsButton.addEventListener('click', fetchStats);
 });
 
 // Login und Authentifizierung
@@ -224,8 +293,6 @@ function displayLocations(locations) {
         return;
     }
 
-    const useThumbnails = showThumbnails.checked;
-
     locations.forEach(location => {
         const card = document.createElement('div');
         card.className = 'location-card';
@@ -236,9 +303,8 @@ function displayLocations(locations) {
             img.className = 'location-image';
             img.alt = location.title;
             
-            // Thumbnail oder Vollbild verwenden
-            const thumbParam = useThumbnails ? '?thumb=true' : '';
-            img.src = `${API_URL}/api/locations/${location.id}/image${thumbParam}`;
+            // Immer Thumbnails verwenden in der Übersicht
+            img.src = `${API_URL}/api/locations/${location.id}/image?thumb=true`;
             
             // Cookie für die Bildanfrage hinzufügen
             img.setAttribute('crossorigin', 'use-credentials');
@@ -278,9 +344,22 @@ function displayLocations(locations) {
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Löschen';
         deleteBtn.onclick = () => deleteLocation(location.id);
+
+        // Bild-Anzeige-Button
+        const viewImgBtn = document.createElement('button');
+        viewImgBtn.textContent = 'Vollbild';
+        viewImgBtn.style.marginRight = '5px';
+        viewImgBtn.onclick = () => {
+            window.open(`${API_URL}/api/locations/${location.id}/image`, '_blank');
+        };
         
         info.appendChild(title);
         info.appendChild(date);
+        
+        if (location.has_image || location.image_type) {
+            actions.appendChild(viewImgBtn);
+        }
+        
         actions.appendChild(deleteBtn);
         info.appendChild(actions);
         card.appendChild(info);
