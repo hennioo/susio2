@@ -341,6 +341,23 @@ function displayLocations(locations) {
         const date = document.createElement('p');
         date.textContent = `Datum: ${location.date || 'Nicht angegeben'}`;
         
+        // Beschreibung hinzufügen
+        if (location.description) {
+            const description = document.createElement('p');
+            description.className = 'location-description';
+            description.textContent = location.description;
+            description.style.fontSize = '0.9em';
+            description.style.color = '#666';
+            description.style.marginTop = '8px';
+            description.style.marginBottom = '8px';
+            info.appendChild(title);
+            info.appendChild(description);
+            info.appendChild(date);
+        } else {
+            info.appendChild(title);
+            info.appendChild(date);
+        }
+        
         const actions = document.createElement('div');
         actions.className = 'location-actions';
         
@@ -356,9 +373,6 @@ function displayLocations(locations) {
         viewImgBtn.onclick = () => {
             window.open(`${API_URL}/api/locations/${location.id}/image`, '_blank');
         };
-        
-        info.appendChild(title);
-        info.appendChild(date);
         
         if (location.has_image || location.image_type) {
             actions.appendChild(viewImgBtn);
