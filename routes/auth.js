@@ -129,4 +129,39 @@ router.post('/verify-access', (req, res) => {
   });
 });
 
+/**
+ * POST /logout
+ * Invalidates the current session and clears the session cookie
+ */
+router.post('/logout', (req, res) => {
+  const sessionId = req.cookies.sessionId;
+  
+  console.log('Logging out session:', sessionId);
+  
+  // Import the invalidateSession function from auth module
+  const { invalidateSession } = require('../auth');
+  
+  if (sessionId && invalidateSession(sessionId)) {
+    console.log('✅ Session invalidated successfully');
+    
+    // Clear the session cookie
+    res.clearCookie('sessionId', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None'
+    });
+    
+    return res.json({
+      error: false,
+      message: 'Logged out successfully'
+    });
+  }
+  
+  console.log('❌ No valid session to logout');
+  return res.status(400).json({
+    error: true,
+    message: 'No valid session'
+  });
+});
+
 module.exports = router;

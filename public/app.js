@@ -91,12 +91,21 @@ async function fetchStats() {
 const accessCodeInput = document.getElementById('access-code');
 const loginButton = document.getElementById('login-button');
 const authMessage = document.getElementById('auth-message');
+const authContainer = document.getElementById('auth-container');
 const mainContainer = document.getElementById('main-container');
 const locationForm = document.getElementById('location-form');
 const formMessage = document.getElementById('form-message');
 const refreshButton = document.getElementById('refresh-button');
 const locationsMessage = document.getElementById('locations-message');
 const locationsList = document.getElementById('locations-list');
+
+// Logout Elemente
+const logoutContainer = document.getElementById('logout-container');
+const logoutButton = document.getElementById('logout-button');
+
+// Suche Elemente
+const searchInput = document.getElementById('search-input');
+const clearSearchButton = document.getElementById('clear-search-button');
 
 // Stats Panel Elemente
 const statsLoading = document.getElementById('stats-loading');
@@ -119,9 +128,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event Listener hinzufügen
     loginButton.addEventListener('click', login);
+    logoutButton.addEventListener('click', logout);
     locationForm.addEventListener('submit', createLocation);
     refreshButton.addEventListener('click', fetchLocations);
     refreshStatsButton.addEventListener('click', fetchStats);
+    
+    // Suchfunktion Event-Listener
+    searchInput.addEventListener('input', filterLocations);
+    clearSearchButton.addEventListener('click', clearSearch);
 });
 
 // Login und Authentifizierung
