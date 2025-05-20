@@ -1,8 +1,27 @@
 // Backend-URL (auf Render gehostet)
 // Passe diese URL an dein auf Render gehostetes Backend an
 const API_URL = 'https://susio2.onrender.com';
-// Wir benötigen keine manuelle Session-Cookie-Verwaltung mehr,
-// da wir jetzt vollständig auf die automatische Browser-Cookie-Verwaltung setzen
+
+// Globaler Authentifizierungsstatus
+window.isAuthenticated = false;
+
+// Authentifizierungsstatus beim Laden prüfen
+async function checkAuthStatus() {
+    try {
+        const response = await fetch(`${API_URL}/api/locations`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            window.isAuthenticated = true;
+            mainContainer.style.display = 'flex';
+            fetchLocations();
+        }
+    } catch (error) {
+        console.log('Noch nicht authentifiziert oder API nicht erreichbar');
+    }
+}
 
 // DOM Elemente
 const accessCodeInput = document.getElementById('access-code');
@@ -18,6 +37,10 @@ const showThumbnails = document.getElementById('show-thumbnails');
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
+    // Authentifizierungsstatus prüfen beim Laden
+    checkAuthStatus();
+
+    // Event Listener hinzufügen
     loginButton.addEventListener('click', login);
     locationForm.addEventListener('submit', createLocation);
     refreshButton.addEventListener('click', fetchLocations);
@@ -40,17 +63,15 @@ async function login() {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include', // Wichtig für das Senden und Empfangen von Cookies
             body: JSON.stringify({ accessCode })
         });
 
         const data = await response.json();
 
         if (response.ok && !data.error) {
-            // Session-Cookie aus der Antwort extrahieren
-            const setCookie = response.headers.get('set-cookie');
-            if (setCookie) {
-                sessionCookie = setCookie.split(';')[0];
-            }
+            // Authentifizierungsstatus setzen - wir verwenden das Session-Cookie im Browser
+            window.isAuthenticated = true;
             
             showAuthMessage('Erfolgreich angemeldet!', false);
             mainContainer.style.display = 'flex';
@@ -67,7 +88,7 @@ async function login() {
 async function createLocation(event) {
     event.preventDefault();
     
-    if (!sessionCookie) {
+    if (!window.isAuthenticated) {
         showFormMessage('Bitte zuerst anmelden.', true);
         return;
     }
@@ -169,7 +190,7 @@ function convertFileToBase64(file) {
 
 // Alle Standorte abrufen
 async function fetchLocations() {
-    if (!sessionCookie) {
+    if (!window.isAuthenticated) {
         showLocationsMessage('Bitte zuerst anmelden.', true);
         return;
     }
