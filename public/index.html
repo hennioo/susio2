@@ -3,127 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>susio - Startseite</title>
-    <!-- Bootstrap Dark Theme für Ladeanimation -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-dark-5@1.1.3/dist/css/bootstrap-dark.min.css" rel="stylesheet">
+    <title>susio - Weiterleitung</title>
     <style>
         body {
+            font-family: Arial, sans-serif;
             background-color: #121212;
-            color: #f5f5f5;
-            font-family: 'Inter', sans-serif;
+            color: #fff;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            height: 100vh;
             margin: 0;
-        }
-        .loading-container {
+            padding: 20px;
             text-align: center;
         }
-        .loader {
-            margin-bottom: 20px;
-        }
-        .logo {
+        h1 {
             color: #ff8c00;
-            font-size: 32px;
-            font-weight: bold;
             margin-bottom: 20px;
         }
-        #connection-status {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 10px;
-            background-color: #f8d7da;
-            color: #721c24;
-            text-align: center;
-            z-index: 9999;
-            display: none;
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,140,0,0.3);
+            border-radius: 50%;
+            border-top-color: #ff8c00;
+            animation: spin 1s ease-in-out infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .message {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        .buttons {
+            margin-top: 30px;
+        }
+        .btn {
+            background-color: #ff8c00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #e67e00;
+        }
+        #debug-info {
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #999;
+            max-width: 600px;
+            text-align: left;
         }
     </style>
 </head>
 <body>
-    <div id="connection-status"></div>
+    <h1>susio</h1>
+    <div class="spinner"></div>
+    <div class="message">Prüfe Anmeldestatus und leite weiter...</div>
     
-    <div class="loading-container">
-        <div class="logo">susio</div>
-        <div class="spinner-border text-warning loader" role="status">
-            <span class="visually-hidden">Lädt...</span>
-        </div>
-        <p id="status-text">Anmeldestatus wird überprüft...</p>
+    <div class="buttons" style="display: none;">
+        <button class="btn" id="login-btn">Zur Anmeldung</button>
+        <button class="btn" id="map-btn">Zur Karte</button>
     </div>
-
-    <!-- Verbesserte Verbindungs-Retry-Logik -->
-    <script src="js/connection-retry.js"></script>
     
-    <!-- API URL und Auth-Skript -->
+    <div id="debug-info"></div>
+    
     <script>
-        // API-Basis-URL bestimmen
-        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? `http://${window.location.hostname}:10000` 
-            : '';
+        // Hilfsfunktion zum Anzeigen von Debug-Informationen
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const debugInfo = document.getElementById('debug-info');
+            const line = document.createElement('div');
+            line.textContent = `[${timestamp}] ${message}`;
+            debugInfo.appendChild(line);
+            console.log(`[${timestamp}] ${message}`);
+        }
         
-        // Überprüft den Auth-Status und leitet entsprechend weiter
-        // Mit verbesserter Retry-Logik für die Verbindung zum Server
-        async function checkAuthAndRedirect() {
-            const statusText = document.getElementById('status-text');
+        // API-Basis-URL
+        const API_URL = '';
+        
+        // Prüft, ob der Benutzer angemeldet ist
+        async function checkAuthStatus() {
+            log('Prüfe Anmeldestatus...');
+            
+            // Session-ID aus URL-Parametern oder localStorage abrufen
+            let sessionId = null;
+            
+            // Zuerst URL-Parameter prüfen
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlSessionId = urlParams.get('sessionId');
+            
+            if (urlSessionId) {
+                log('Session-ID aus URL-Parameter gefunden');
+                localStorage.setItem('manual_session_id', urlSessionId);
+                sessionId = urlSessionId;
+            } else {
+                // Dann aus localStorage
+                sessionId = localStorage.getItem('manual_session_id');
+                if (sessionId) {
+                    log('Session-ID aus lokalem Speicher gefunden');
+                } else {
+                    log('Keine Session-ID gefunden');
+                }
+            }
+            
+            // Wenn keine Session-ID vorhanden, zur Login-Seite weiterleiten
+            if (!sessionId) {
+                log('Keine Session-ID gefunden, leite zur Login-Seite weiter');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+                return;
+            }
             
             try {
-                statusText.textContent = "Verbindung zum Server wird hergestellt...";
+                // Session-Status mit Header-Methode prüfen
+                log('Sende Anfrage an /api/session-status mit Header X-Session-Id');
                 
-                // API-Anfrage mit Credentials und Retry-Logik
-                const response = await fetchWithRetry(`${API_URL}/api/session-status`, {
+                const response = await fetch(`${API_URL}/api/session-status`, {
                     method: 'GET',
-                    credentials: 'include',
                     headers: {
+                        'X-Session-Id': sessionId,
                         'Cache-Control': 'no-cache'
-                    }
-                }, 5); // Bis zu 5 Wiederholungen für bessere Zuverlässigkeit
+                    },
+                    credentials: 'include'
+                });
                 
-                // Status-Check auswerten
+                log(`Server-Antwort Status: ${response.status}`);
+                
                 const data = await response.json();
+                log('Server-Antwort erhalten:', JSON.stringify(data));
                 
                 if (response.ok && data.authenticated) {
-                    // Authentifiziert, zur Map weiterleiten
-                    console.log('Authentifiziert! Weiterleitung zur Karte...');
-                    statusText.textContent = "Authentifiziert! Weiterleitung zur Karte...";
+                    log('Session ist gültig! Leite zur Karte weiter...');
                     
-                    // Session-ID aus der Antwort im localStorage speichern, falls vorhanden
+                    // Session-ID aktualisieren, falls in der Antwort enthalten
                     if (data.sessionId) {
                         localStorage.setItem('manual_session_id', data.sessionId);
-                        localStorage.setItem('session_initialized', 'true');
+                        log('Session-ID aktualisiert');
                     }
                     
+                    // Verzögerung und dann zur Karte weiterleiten
                     setTimeout(() => {
-                        window.location.href = 'map.html';
-                    }, 1000);
+                        window.location.href = `map.html?sessionId=${sessionId}`;
+                    }, 1500);
                 } else {
-                    // Nicht authentifiziert, zum Login weiterleiten
-                    console.log('Nicht authentifiziert! Weiterleitung zum Login...');
-                    statusText.textContent = "Nicht authentifiziert! Weiterleitung zum Login...";
+                    // Wenn Session ungültig, zur Login-Seite weiterleiten
+                    log('Session ungültig oder abgelaufen');
+                    localStorage.removeItem('manual_session_id');
                     
                     setTimeout(() => {
                         window.location.href = 'login.html';
-                    }, 1000);
+                    }, 1500);
                 }
             } catch (error) {
-                console.error('Fehler bei Authentifizierungsprüfung:', error);
-                statusText.textContent = "Fehler bei der Verbindung! Weiterleitung zum Login...";
+                log(`Fehler beim Prüfen des Anmeldestatus: ${error.message}`);
                 
-                // Nach kurzer Verzögerung zur Login-Seite leiten
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 2000);
+                // Buttons anzeigen für manuelle Navigation
+                document.querySelector('.spinner').style.display = 'none';
+                document.querySelector('.message').textContent = 'Es ist ein Fehler aufgetreten. Bitte wähle eine Option:';
+                document.querySelector('.buttons').style.display = 'block';
             }
         }
         
-        // Überprüfung starten
-        window.addEventListener('load', () => {
-            // Kurze Verzögerung, um sicherzustellen, dass die Seite vollständig geladen ist
-            // und der Server ausreichend Zeit zum Starten hat (besonders wichtig bei Render)
-            setTimeout(checkAuthAndRedirect, 500);
+        // Seiten-Initialisierung
+        window.addEventListener('DOMContentLoaded', () => {
+            // Event-Listener für die Buttons
+            document.getElementById('login-btn').addEventListener('click', () => {
+                window.location.href = 'login.html';
+            });
+            
+            document.getElementById('map-btn').addEventListener('click', () => {
+                const sessionId = localStorage.getItem('manual_session_id');
+                if (sessionId) {
+                    window.location.href = `map.html?sessionId=${sessionId}`;
+                } else {
+                    window.location.href = 'map.html';
+                }
+            });
+            
+            // Anmeldestatus prüfen
+            checkAuthStatus();
         });
     </script>
 </body>
