@@ -62,87 +62,17 @@
     <script src="js/auth.js"></script>
     
     <script>
-        // Direkter Login-Handler - Vereinfachte Version für bessere Zuverlässigkeit
-        async function handleLogin(accessCode) {
-            const loginEndpoint = `${window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                ? `http://${window.location.hostname}:10000` 
-                : ''}/verify-access`;
-            
-            try {
-                // Login-Anfrage direkt senden
-                const response = await fetchWithRetry(loginEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ accessCode })
-                }, 3);
-                
-                // Response auswerten
-                if (!response.ok) {
-                    return {
-                        success: false,
-                        message: 'Ungültiger Zugangscode oder Serverfehler'
-                    };
-                }
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    return {
-                        success: false,
-                        message: data.message || 'Anmeldefehler'
-                    };
-                }
-                
-                // Session-ID speichern, wenn in der Antwort enthalten (wichtig für Fallback-Auth)
-                if (data.sessionId) {
-                    localStorage.setItem('manual_session_id', data.sessionId);
-                    localStorage.setItem('session_initialized', 'true');
-                    console.log('Session-ID gespeichert:', data.sessionId.substring(0, 8) + '...');
-                } else {
-                    console.warn('Keine Session-ID in der Antwort gefunden');
-                }
-                
-                return {
-                    success: true,
-                    message: 'Erfolgreich angemeldet!',
-                    redirect: 'map.html'
-                };
-            } catch (error) {
-                console.error('Login-Fehler:', error);
-                return {
-                    success: false,
-                    message: `Verbindungsfehler: ${error.message}`
-                };
-            }
-        }
-
         // Überprüfe Auth-Status mit Retry-Logik
         window.addEventListener('load', async () => {
             try {
                 // Session-Status prüfen mit Retry-Logik
-                const sessionEndpoint = `${window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                    ? `http://${window.location.hostname}:10000` 
-                    : ''}/api/session-status`;
-                
-                // Gespeicherte Session-ID abrufen (für Header-basierte Auth)
-                const storedSessionId = localStorage.getItem('manual_session_id');
-                const headers = {
-                    'Cache-Control': 'no-cache'
-                };
-                
-                // Session-ID als Header hinzufügen, falls vorhanden
-                if (storedSessionId) {
-                    headers['X-Session-Id'] = storedSessionId;
-                }
-                
-                const response = await fetchWithRetry(sessionEndpoint, {
+                const response = await fetchWithRetry(`${API_URL}/api/session-status`, {
                     method: 'GET',
                     credentials: 'include',
                     cache: 'no-cache',
-                    headers: headers
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
                 }, 3);
                 
                 const data = await response.json();
@@ -150,21 +80,8 @@
                 if (response.ok && data.authenticated) {
                     // Bereits authentifiziert, zur Karte weiterleiten
                     console.log('Bereits authentifiziert, leite weiter...');
-                    
-                    // Session-ID aktualisieren, falls in der Antwort enthalten
-                    if (data.sessionId) {
-                        localStorage.setItem('manual_session_id', data.sessionId);
-                        localStorage.setItem('session_initialized', 'true');
-                    }
-                    
-                    // Mit Session-ID als URL-Parameter weiterleiten
                     setTimeout(() => {
-                        const sessionId = localStorage.getItem('manual_session_id');
-                        if (sessionId) {
-                            window.location.href = `map.html?sessionId=${sessionId}`;
-                        } else {
-                            window.location.href = 'map.html';
-                        }
+                        window.location.href = 'map.html';
                     }, 500);
                 }
             } catch (error) {
@@ -192,24 +109,16 @@
             feedback.innerHTML = '';
             
             try {
-                // Verbesserte Login-Funktion mit Retry-Logik verwenden (direkt im Skript definiert)
-                const result = await handleLogin(accessCode);
+                // Verbesserte Login-Funktion mit Retry-Logik verwenden
+                const result = await login(accessCode);
                 
                 if (result.success) {
                     // Erfolgsmeldung anzeigen
                     feedback.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
                     
-                    // Kurze Verzögerung, dann mit Session-ID als URL-Parameter weiterleiten
+                    // Kurze Verzögerung, dann weiterleiten
                     setTimeout(() => {
-                        // Session-ID aus dem lokalen Speicher holen
-                        const sessionId = localStorage.getItem('manual_session_id');
-                        if (sessionId) {
-                            // Mit URL-Parameter weiterleiten (zuverlässige Methode)
-                            window.location.href = `${result.redirect || 'map.html'}?sessionId=${sessionId}`;
-                        } else {
-                            // Fallback auf direkten Link, falls keine Session-ID verfügbar
-                            window.location.href = result.redirect || 'map.html';
-                        }
+                        window.location.href = result.redirect || 'map.html';
                     }, 1000);
                 } else {
                     // Fehlermeldung anzeigen

@@ -109,17 +109,18 @@ function validateSession(sessionId) {
     return false;
   }
   
-  // Überprüfe, ob die Session älter als eine Stunde ist (3600000 ms)
-  const sessionAge = Date.now() - new Date(session.createdAt).getTime();
-  const maxSessionAge = 3600000; // 1 Stunde in Millisekunden
+  // Check if session is not expired (optional: add expiry check)
+  // For example, sessions expire after 24 hours
+  const now = new Date();
+  const sessionAge = now - session.createdAt;
+  const maxAge = 24 * 60 * 60 * 1000; // 24 hours
   
-  if (sessionAge > maxSessionAge) {
-    console.log(`⏱️ Session abgelaufen (${Math.round(sessionAge / 60000)} Minuten alt): ${sessionId.substring(0, 8)}...`);
+  if (sessionAge > maxAge) {
+    console.log(`Session expired: ${sessionId}`);
     sessions.delete(sessionId);
     return false;
   }
   
-  // Session ist gültig und noch nicht abgelaufen
   return true;
 }
 
@@ -149,29 +150,27 @@ function invalidateSession(sessionId) {
 
 /**
  * Authentication middleware for Express
- * OPTIMIERT FÜR RENDER: Priorisiert Header-basierte Authentifizierung
+ * Checks if the request has a valid session
+ * Unterstützt mehrere Authentifizierungsmethoden: 
+ * - Cookie-basiert (traditionell)
+ * - Header-basiert (für Fallback mit localStorage)
+ * - Query-Parameter (für spezielle Anwendungsfälle)
  */
 function requireAuth(req, res, next) {
-  // PRIORITÄT: X-Session-Id Header (wegen Cookie-Problemen in Render)
-  // Extrahiere Session-ID mit Header als Priorität, Cookie als Fallback
-  const sessionId = req.headers['x-session-id'] || 
-                    req.cookies.sessionId || 
+  // Session-ID aus mehreren möglichen Quellen extrahieren
+  const sessionId = req.cookies.sessionId || 
+                    req.headers['x-session-id'] || 
                     req.query.sessionId;
   
   // Detaillierte Debugging-Informationen
-  const source = req.headers['x-session-id'] ? 'header' : 
-               (req.cookies.sessionId ? 'cookie' : 
+  const source = req.cookies.sessionId ? 'cookie' : 
+               (req.headers['x-session-id'] ? 'header' : 
                (req.query.sessionId ? 'query' : 'nicht gefunden'));
   
   console.log(`🔒 Validating session: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine'} (Quelle: ${source})`);
   
   if (validateSession(sessionId)) {
     console.log(`✅ Valid session: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine'}`);
-    
-    // Setze die Session-ID in einen Header der Antwort, um Client zu ermöglichen,
-    // die Session-ID zu erfassen/aktualisieren
-    res.set('X-Confirmed-Session-Id', sessionId);
-    
     return next();
   }
   

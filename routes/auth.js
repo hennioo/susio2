@@ -89,7 +89,6 @@ router.get('/login', (req, res) => {
 /**
  * POST /verify-access
  * Verifies the access code and creates a session
- * WICHTIGER HINWEIS: Fokus auf Header-basierte Authentifizierung wegen Cookie-Problemen auf Render
  */
 router.post('/verify-access', (req, res) => {
   const { accessCode } = req.body;
@@ -128,29 +127,63 @@ router.post('/verify-access', (req, res) => {
     console.log(`[DEBUG] Umgebung: ${isProduction ? 'Produktion' : 'Entwicklung'}`);
     console.log(`[DEBUG] Sichere Verbindung (HTTPS): ${isSecure ? 'Ja' : 'Nein'}`);
     
-    // VEREINFACHTE AUTHENTIFIZIERUNG: Wir fokussieren uns auf Header-basierte Auth
-    // da Cookies auf Render mit SameSite=None und verschiedenen Browsern Probleme machen
+    // Cookie-Optionen für die maximale Kompatibilität mit Browsern konfigurieren
+    // KRITISCH: Bei manchen Browsern funktioniert SameSite=None nicht zuverlässig
+    // Besonders auf mobilen Browsern und älteren Chrome-Versionen
+    const isMobileBrowser = /mobile|android|iphone|ipad/i.test(req.get('user-agent') || '');
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true, // MUSS true sein bei SameSite=None
+      sameSite: isMobileBrowser ? 'lax' : 'none', // 'lax' für mobile Browser, 'none' für Desktop
+      path: '/', // Wichtig: Zugriff auf allen Pfaden
+      maxAge: 24 * 60 * 60 * 1000, // 24 Stunden
+      domain: undefined // Domain nicht explizit setzen, Browser verwendet automatisch aktuelle Domain
+    };
     
-    // Erfolgsantwort mit Session-ID für client-seitige Speicherung
+    // Für lokale Tests und Render-Umgebung
+    if (host.includes('localhost') || host.includes('replit') || host.includes('127.0.0.1')) {
+      delete cookieOptions.sameSite; // Entferne SameSite für lokale Entwicklung
+      cookieOptions.secure = false;  // Secure nur für HTTPS
+    }
+    
+    // Ausführliche Debug-Informationen für Cookie-Probleme
+    console.log('[DEBUG] Cookie-Optionen:', JSON.stringify(cookieOptions, null, 2));
+    
+    // Vor dem Setzen des Cookies prüfen wir vorhandene Cookies
+    const existingCookies = req.cookies;
+    console.log('[DEBUG] Vorhandene Cookies:', Object.keys(existingCookies).length ? existingCookies : 'Keine');
+    
+    // ALTERNATIVE METHODE: Session direkt in der Response senden
+    // Dieser Ansatz verwendet BEIDE Methoden: Cookie UND JSON-Response
+    // So ist die Session sowohl im Cookie als auch in der JSON-Antwort verfügbar
+    
+    // 1. Regulären Cookie setzen wie zuvor
+    res.cookie('sessionId', sessionId, cookieOptions);
+    console.log('[DEBUG] Session-Cookie gesetzt mit Optionen:', JSON.stringify(cookieOptions));
+    
+    // 2. Zusätzlich Session-ID direkt in der Antwort senden
+    // Dies ist ein Fallback, falls der Cookie-Ansatz weiterhin Probleme macht
     const response = {
       error: false,
       message: 'Zugangscode akzeptiert',
-      // KRITISCH: Session-ID wird explizit zurückgegeben
+      // Wichtig: SessionID in der Antwort zurückgeben
       sessionId: sessionId,
       debug: {
         sessionCreated: true,
         timestamp: new Date().toISOString(),
+        cookieSet: true,
         environment: isProduction ? 'production' : 'development',
-        secure_connection: isSecure
+        secure_connection: isSecure,
+        cookieOptions: cookieOptions
       }
     };
     
     // Spezielle Debug-Header hinzufügen
     res.set('X-Debug-Session', 'Created');
     res.set('X-Debug-Time', new Date().toISOString());
-    res.set('X-Session-Method', 'header-only');
+    res.set('X-Session-Method', 'dual'); // Kennzeichnet die Dual-Methode
     
-    console.log('[DEBUG] Sende Antwort mit Session-ID für Header-basierte Auth');
+    console.log('[DEBUG] Sende Antwort mit Session-ID:', JSON.stringify(response, null, 2));
     console.log(`[DEBUG] ====== LOGIN-VERSUCH ENDE ======`);
     
     return res.json(response);

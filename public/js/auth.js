@@ -52,21 +52,9 @@ function isAuthenticated() {
     return _isAuthenticated;
 }
 
-// Lese Session-ID aus verschiedenen Quellen
-// Priorität: URL-Parameter > lokaler Speicher
+// Lese Session-ID aus dem lokalen Speicher (falls vorhanden)
+// Dies wird als Fallback verwendet, wenn der Cookie nicht funktioniert
 function getStoredSessionId() {
-    // Zuerst URL-Parameter prüfen
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlSessionId = urlParams.get('sessionId');
-    
-    if (urlSessionId) {
-        DEBUG.log('Session', 'Session-ID aus URL-Parameter gefunden');
-        // In den localStorage speichern für zukünftige Anfragen
-        localStorage.setItem('manual_session_id', urlSessionId);
-        return urlSessionId;
-    }
-    
-    // Dann aus localStorage als Fallback
     return localStorage.getItem('manual_session_id');
 }
 
@@ -158,14 +146,8 @@ async function checkAuthStatus(redirectOnFail = true) {
             
             // Wenn auf Login-Seite oder Startseite, weiterleiten zur Karte
             if (window.location.pathname.includes('login.html') || window.location.pathname === '/' || window.location.pathname === '') {
-                DEBUG.log('Auth-Check', 'Weiterleitung zur map.html mit Session-ID als URL-Parameter...');
-                // Session-ID aus lokalem Speicher oder aus dem Response verwenden
-                const sessionIdToUse = data.sessionId || storedSessionId;
-                if (sessionIdToUse) {
-                    window.location.href = `map.html?sessionId=${sessionIdToUse}`;
-                } else {
-                    window.location.href = 'map.html';
-                }
+                DEBUG.log('Auth-Check', 'Weiterleitung zur map.html...');
+                window.location.href = 'map.html';
             }
             return true;
         } else {

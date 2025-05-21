@@ -232,22 +232,8 @@
             const authOverlay = document.getElementById('auth-overlay');
             const statusMessage = document.getElementById('auth-status-message');
             
-            // Session-ID aus URL-Parametern oder localStorage abrufen
-            let storedSessionId;
-            
-            // Zuerst URL-Parameter prüfen
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlSessionId = urlParams.get('sessionId');
-            
-            if (urlSessionId) {
-                console.log('Session-ID aus URL-Parameter gefunden');
-                // In den localStorage speichern für zukünftige Anfragen
-                localStorage.setItem('manual_session_id', urlSessionId);
-                storedSessionId = urlSessionId;
-            } else {
-                // Aus localStorage abrufen als Fallback
-                storedSessionId = localStorage.getItem('manual_session_id');
-            }
+            // Gespeicherte Session-ID aus localStorage abrufen
+            const storedSessionId = localStorage.getItem('manual_session_id');
             
             try {
                 // Status anzeigen
@@ -289,7 +275,6 @@
                     // Nicht authentifiziert, zur Login-Seite umleiten
                     statusMessage.textContent = 'Nicht authentifiziert. Leite zur Login-Seite weiter...';
                     setTimeout(() => {
-                        // Sicherer Übergang zur Login-Seite (ohne URL-Parameter)
                         window.location.href = 'login.html';
                     }, 1500);
                 }
