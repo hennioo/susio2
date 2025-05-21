@@ -91,6 +91,9 @@ async function login(accessCode) {
     try {
         console.log('Login-Versuch mit Zugangscode...');
         
+        // Klare Logging-Ausgabe vor dem Serveraufruf
+        console.log(`API-Endpunkt für Login: ${API_URL}/verify-access`);
+        
         const response = await fetch(`${API_URL}/verify-access`, {
             method: 'POST',
             headers: {
@@ -100,27 +103,44 @@ async function login(accessCode) {
             body: JSON.stringify({ accessCode })
         });
         
+        // Cookie-Debugging (nur Präsenz prüfen, nicht den Wert auslesen)
+        const hasCookies = document.cookie.length > 0;
+        console.log(`Hat der Browser allgemeine Cookies? ${hasCookies ? 'Ja' : 'Nein'}`);
+        console.log(`Cookie-Debug: HTTP-only Cookies sind nicht über JavaScript auslesbar`);
+        
         const data = await response.json();
         console.log('Login-Server-Antwort:', data);
         
         if (response.ok && !data.error) {
             console.log('✅ Login erfolgreich - Session erstellt');
             
-            // Zusätzliche Überprüfung über den Session-Status-Endpunkt
-            // um sicherzustellen, dass die Session korrekt gespeichert wurde
+            // Kleine Verzögerung, um sicherzustellen, dass die Session gespeichert wurde
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Überprüfung über den Session-Status-Endpunkt
             const sessionCheckResponse = await fetch(`${API_URL}/api/session-status`, {
                 method: 'GET',
-                credentials: 'include'
+                credentials: 'include' // Wichtig für Cookie-Übertragung
             });
             
             const sessionData = await sessionCheckResponse.json();
             console.log('Session-Validierung nach Login:', sessionData);
             
             if (sessionCheckResponse.ok && sessionData.authenticated) {
+                console.log('✅ Session erfolgreich validiert');
                 _isAuthenticated = true;
-                return { success: true, message: 'Erfolgreich angemeldet!', redirect: 'map.html' };
+                
+                // Lokale Storage-Markierung (ohne sensible Daten)
+                // Hilft bei der Erkennung, ob ein Benutzer angemeldet war
+                localStorage.setItem('session_initialized', 'true');
+                
+                return { 
+                    success: true, 
+                    message: 'Erfolgreich angemeldet!', 
+                    redirect: 'map.html' 
+                };
             } else {
-                console.error('❌ Session-Validierung fehlgeschlagen nach erfolgreichem Login');
+                console.error('❌ Session-Validierung fehlgeschlagen nach Login');
                 return { 
                     success: false, 
                     message: 'Login erfolgreich, aber Session konnte nicht validiert werden. Bitte erneut versuchen.' 
@@ -240,10 +260,13 @@ function initLoginForm() {
     const accessCodeInput = document.getElementById('access-code');
     const feedbackEl = document.getElementById('login-feedback');
     
+    console.log('Login-Formular wird initialisiert');
+    
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            console.log('Login-Formular wurde abgeschickt');
             const accessCode = accessCodeInput.value.trim();
             if (!accessCode) {
                 showFeedback(feedbackEl, 'Bitte gib einen Zugangscode ein.', 'error');
@@ -256,26 +279,41 @@ function initLoginForm() {
             submitButton.disabled = true;
             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Anmelden...';
             
-            const result = await login(accessCode);
-            
-            // Button wieder aktivieren
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalText;
-            
-            if (result.success) {
-                showFeedback(feedbackEl, result.message, 'success');
-                // Globale Nachricht für die Weiterleitung
-                showGlobalMessage('Login erfolgreich! Du wirst weitergeleitet...', 'success');
-                // Nach kurzer Verzögerung zur Map-Seite weiterleiten
-                setTimeout(() => {
-                    window.location.href = 'map.html';
-                }, 1000);
-            } else {
-                showFeedback(feedbackEl, result.message, 'error');
-                // Globale Fehlermeldung
-                showGlobalMessage('Login fehlgeschlagen: ' + result.message, 'error');
+            try {
+                console.log('Login-Prozess wird gestartet...');
+                const result = await login(accessCode);
+                
+                if (result.success) {
+                    console.log('✅ Login war erfolgreich - UI wird aktualisiert');
+                    showFeedback(feedbackEl, result.message, 'success');
+                    
+                    // Globale Nachricht für die Weiterleitung
+                    showGlobalMessage('Login erfolgreich! Du wirst weitergeleitet...', 'success');
+                    
+                    // Nach kurzer Verzögerung zur Map-Seite weiterleiten
+                    console.log(`Weiterleitung zu ${result.redirect} in 1 Sekunde...`);
+                    setTimeout(() => {
+                        window.location.href = result.redirect || 'map.html';
+                    }, 1000);
+                } else {
+                    console.log('❌ Login fehlgeschlagen:', result.message);
+                    showFeedback(feedbackEl, result.message, 'error');
+                    
+                    // Zugangscode leeren und Fokus zurücksetzen
+                    accessCodeInput.value = '';
+                    accessCodeInput.focus();
+                }
+            } catch (error) {
+                console.error('Unerwarteter Fehler beim Login:', error);
+                showFeedback(feedbackEl, `Ein Fehler ist aufgetreten: ${error.message}`, 'error');
+            } finally {
+                // Button wieder aktivieren
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
             }
         });
+    } else {
+        console.log('Login-Formular nicht gefunden auf dieser Seite');
     }
 }
 
@@ -292,8 +330,7 @@ function showFeedback(element, message, type) {
 
 // Initialisiert die Auth-Komponente
 function initAuth() {
-    // Auth-Status überprüfen
-    checkAuthStatus();
+    console.log('Auth-System wird initialisiert...');
     
     // Login-Formular initialisieren
     initLoginForm();
@@ -304,19 +341,111 @@ function initAuth() {
         logoutBtn.addEventListener('click', logout);
     }
     
-    // Routing-Schutz: Direkten Zugriff auf map.html verhindern
-    if (window.location.pathname.includes('map.html')) {
-        // Verzögerter Check, um sicherzustellen, dass die Auth-Prüfung abgeschlossen ist
-        setTimeout(() => {
-            if (!isAuthenticated()) {
-                showGlobalMessage('Bitte melde dich an, um auf die Karte zuzugreifen.', 'warning');
-                window.location.href = 'login.html';
-            }
-        }, 500);
-    }
+    // Seitenspezifischer Code
+    const isLoginPage = window.location.pathname.includes('login.html');
+    const isMapPage = window.location.pathname.includes('map.html');
     
-    // Regelmäßige Auth-Status-Prüfung starten (alle 2 Minuten)
-    startAuthStatusMonitor(120000);
+    if (isLoginPage) {
+        console.log('Auf Login-Seite - prüfe, ob Benutzer bereits angemeldet ist');
+        
+        // Bei Login-Seite: Prüfen, ob Benutzer bereits angemeldet ist
+        // Falls ja, zur Map-Seite weiterleiten
+        fetch(`${API_URL}/api/session-status`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.authenticated) {
+                console.log('Benutzer bereits angemeldet - Weiterleitung zur map.html');
+                window.location.href = 'map.html';
+            } else {
+                console.log('Benutzer nicht angemeldet - Login-Formular bleibt aktiv');
+            }
+        })
+        .catch(error => {
+            console.error('Fehler bei der Session-Prüfung auf der Login-Seite:', error);
+        });
+    } 
+    else if (isMapPage) {
+        console.log('Auf map.html - führe Session-Validierung durch');
+        
+        // Bei Map-Seite: Session überprüfen, aber mit Fehlertoleranz
+        fetch(`${API_URL}/api/session-status`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Session-Prüfung auf map.html:', data);
+            
+            if (data.authenticated) {
+                console.log('✅ Gültige Session auf map.html bestätigt');
+                _isAuthenticated = true;
+                
+                // Regelmäßige Prüfung nur starten, wenn die Session gültig ist
+                // Verhindert mehrfache Intervalle
+                startAuthStatusMonitor(120000);
+            } else {
+                console.log('❌ Ungültige Session auf map.html erkannt');
+                
+                // Freundliche Nachricht mit Button anzeigen, statt automatisch umzuleiten
+                const msgContainer = document.createElement('div');
+                msgContainer.className = 'session-expired-overlay';
+                msgContainer.innerHTML = `
+                    <div class="session-message-box">
+                        <h3>Deine Sitzung ist abgelaufen</h3>
+                        <p>Bitte melde dich erneut an, um auf die Karte zuzugreifen.</p>
+                        <button class="btn btn-primary" id="login-redirect-btn">Zur Anmeldung</button>
+                    </div>
+                `;
+                document.body.appendChild(msgContainer);
+                
+                // Styling für Overlay
+                const style = document.createElement('style');
+                style.textContent = `
+                    .session-expired-overlay {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0,0,0,0.8);
+                        z-index: 9999;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .session-message-box {
+                        background: var(--bs-dark);
+                        border: 1px solid var(--bs-secondary);
+                        padding: 2rem;
+                        border-radius: 0.5rem;
+                        max-width: 90%;
+                        width: 400px;
+                        text-align: center;
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                // Event-Handler für den Button
+                document.getElementById('login-redirect-btn').addEventListener('click', () => {
+                    window.location.href = 'login.html';
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Fehler bei der Session-Prüfung:', error);
+            // Bei Netzwerkfehlern keine Umleitung erzwingen
+            _isAuthenticated = false;
+            showGlobalMessage('Verbindungsprobleme bei der Session-Prüfung.', 'warning');
+        });
+    }
+    else {
+        // Auf anderen Seiten standardmäßig Auth-Status prüfen und Monitor starten
+        checkAuthStatus();
+        startAuthStatusMonitor(120000);
+    }
 }
 
 // Event-Listener für Seiten-Laden

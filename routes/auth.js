@@ -93,39 +93,49 @@ router.get('/login', (req, res) => {
 router.post('/verify-access', (req, res) => {
   const { accessCode } = req.body;
   
-  console.log('Verifying access code');
+  console.log(`Zugangscode-Überprüfung - ${new Date().toISOString()}`);
   
   if (!accessCode) {
-    console.log('❌ No access code provided');
+    console.log('❌ Kein Zugangscode angegeben');
     return res.status(400).json({
       error: true,
-      message: 'Access code is required'
+      message: 'Bitte gib einen Zugangscode ein'
     });
   }
   
   if (validateAccessCode(accessCode)) {
     const sessionId = createSession();
+    console.log(`✅ Zugangscode gültig. Session erstellt: ${sessionId.substring(0, 8)}...`);
     
-    // Set session cookie with secure and SameSite settings for cross-origin requests
-    res.cookie('sessionId', sessionId, {
+    // Ermittle, ob wir in der Produktion oder Entwicklung sind
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    console.log(`Umgebung: ${isProduction ? 'Produktion' : 'Entwicklung'}, Sichere Verbindung: ${isSecure}`);
+    
+    // Cookie-Optionen basierend auf der Umgebung
+    const cookieOptions = {
       httpOnly: true,
-      secure: true, // Required for HTTPS (Render)
-      sameSite: 'None', // Allow cross-site cookie sharing
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    });
+      secure: isProduction, // Nur bei HTTPS oder im Produktionsmodus
+      sameSite: isProduction ? 'none' : 'lax', // 'none' für Cross-Site in Produktion, sonst 'lax'
+      maxAge: 24 * 60 * 60 * 1000 // 24 Stunden
+    };
     
-    console.log('✅ Access code verified successfully');
+    // Session-Cookie setzen
+    res.cookie('sessionId', sessionId, cookieOptions);
+    console.log('Session-Cookie gesetzt mit Optionen:', JSON.stringify(cookieOptions));
+    
     return res.json({
       error: false,
-      message: 'Access granted',
-      sessionId
+      message: 'Zugangscode akzeptiert',
+      // Wir senden die sessionId nicht mehr zurück, da sie über httpOnly Cookie gesendet wird
     });
   }
   
-  console.log('❌ Invalid access code');
+  console.log('❌ Ungültiger Zugangscode');
   return res.status(401).json({
     error: true,
-    message: 'Invalid access code'
+    message: 'Ungültiger Zugangscode'
   });
 });
 
@@ -145,10 +155,15 @@ router.post('/logout', (req, res) => {
     console.log('✅ Session invalidated successfully');
     
     // Clear the session cookie
+    // Ermittle, ob wir in der Produktion oder Entwicklung sind
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const isProduction = process.env.NODE_ENV === 'production';
+    
     res.clearCookie('sessionId', {
       httpOnly: true,
-      secure: true,
-      sameSite: 'None'
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/'
     });
     
     return res.json({
