@@ -13,8 +13,54 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        #connection-status {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background-color: #f8d7da;
+            color: #721c24;
+            text-align: center;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .spinner-big {
+            width: 3rem;
+            height: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body class="bg-dark text-white">
+    <!-- Connection Status Banner -->
+    <div id="connection-status"></div>
+    
+    <!-- Authentication Verification Overlay -->
+    <div id="auth-overlay" class="auth-overlay">
+        <div class="spinner-border text-warning spinner-big" role="status">
+            <span class="visually-hidden">Lädt...</span>
+        </div>
+        <h4 class="text-white">Prüfe Anmeldestatus...</h4>
+        <p class="text-muted" id="auth-status-message">Verbindung zum Server wird hergestellt...</p>
+    </div>
+    
     <!-- Map Container -->
     <div id="map"></div>
     
@@ -172,10 +218,74 @@
     <!-- JavaScript Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Verbesserte Verbindungs-Retry-Logik -->
+    <script src="js/connection-retry.js"></script>
     
     <!-- Custom JavaScript -->
     <script src="js/auth.js"></script>
     <script src="js/map.js"></script>
     <script src="js/app.js"></script>
+    
+    <script>
+        // Verbesserte Authentifizierungsprüfung mit Retry-Logik
+        document.addEventListener('DOMContentLoaded', async function() {
+            const authOverlay = document.getElementById('auth-overlay');
+            const statusMessage = document.getElementById('auth-status-message');
+            
+            // Gespeicherte Session-ID aus localStorage abrufen
+            const storedSessionId = localStorage.getItem('manual_session_id');
+            
+            try {
+                // Status anzeigen
+                statusMessage.textContent = 'Prüfe Anmeldestatus...';
+                
+                // Session-Status mit Retry-Logik prüfen
+                const response = await fetchWithRetry(`${API_URL}/api/session-status`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        // Wichtig: Wenn wir eine gespeicherte Session-ID haben, als Header mitsenden
+                        ...(storedSessionId ? { 'X-Session-Id': storedSessionId } : {})
+                    }
+                }, 5, 1000); // 5 Versuche, 1 Sekunde Basis-Verzögerung
+                
+                const data = await response.json();
+                
+                if (response.ok && data.authenticated) {
+                    // Authentifizierung erfolgreich
+                    statusMessage.textContent = 'Authentifizierung erfolgreich! Lade Karte...';
+                    
+                    // Session-Status und Session-ID im localStorage speichern
+                    localStorage.setItem('session_initialized', 'true');
+                    if (data.sessionId) {
+                        localStorage.setItem('manual_session_id', data.sessionId);
+                    }
+                    
+                    // Kurze Verzögerung, dann Overlay entfernen
+                    setTimeout(() => {
+                        authOverlay.style.display = 'none';
+                        // App initialisieren (in app.js)
+                        if (typeof initApp === 'function') {
+                            initApp();
+                        }
+                    }, 1000);
+                } else {
+                    // Nicht authentifiziert, zur Login-Seite umleiten
+                    statusMessage.textContent = 'Nicht authentifiziert. Leite zur Login-Seite weiter...';
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                }
+            } catch (error) {
+                console.error('Fehler bei der Authentifizierungsprüfung:', error);
+                statusMessage.textContent = 'Verbindungsfehler. Leite zur Login-Seite weiter...';
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            }
+        });
+    </script>
 </body>
 </html>
