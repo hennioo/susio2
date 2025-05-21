@@ -109,18 +109,17 @@ function validateSession(sessionId) {
     return false;
   }
   
-  // Check if session is not expired (optional: add expiry check)
-  // For example, sessions expire after 24 hours
-  const now = new Date();
-  const sessionAge = now - session.createdAt;
-  const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+  // Überprüfe, ob die Session älter als eine Stunde ist (3600000 ms)
+  const sessionAge = Date.now() - new Date(session.createdAt).getTime();
+  const maxSessionAge = 3600000; // 1 Stunde in Millisekunden
   
-  if (sessionAge > maxAge) {
-    console.log(`Session expired: ${sessionId}`);
+  if (sessionAge > maxSessionAge) {
+    console.log(`⏱️ Session abgelaufen (${Math.round(sessionAge / 60000)} Minuten alt): ${sessionId.substring(0, 8)}...`);
     sessions.delete(sessionId);
     return false;
   }
   
+  // Session ist gültig und noch nicht abgelaufen
   return true;
 }
 
