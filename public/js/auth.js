@@ -52,113 +52,159 @@ function isAuthenticated() {
     return _isAuthenticated;
 }
 
+// Lese Session-ID aus dem lokalen Speicher (falls vorhanden)
+// Dies wird als Fallback verwendet, wenn der Cookie nicht funktioniert
+function getStoredSessionId() {
+    return localStorage.getItem('manual_session_id');
+}
+
 // Überprüft, ob der Benutzer angemeldet ist und handelt entsprechend
-// Speziell optimiert für Render Production vs lokale Entwicklung
+// Optimiert für problematische Cookie-Umgebungen mit Dual-Methode
 async function checkAuthStatus(redirectOnFail = true) {
-    // Status der letzten Session aus localStorage abrufen (falls vorhanden)
-    // Dies ist nur ein Hinweis - die tatsächliche Autorisierung erfolgt durch server-side checks
-    const lastSessionState = localStorage.getItem('session_initialized');
+    // Status der letzten Session aus localStorage abrufen (zwei Methoden)
+    const sessionInitialized = localStorage.getItem('session_initialized');
+    const storedSessionId = getStoredSessionId();
     
-    console.log(`Prüfe Auth-Status. Aktuelle Seite: ${window.location.pathname}`);
-    console.log(`Lokaler Session-Hinweis: ${lastSessionState ? 'Vorhanden' : 'Nicht vorhanden'}`);
+    DEBUG.log('Auth-Check', `Prüfe Auth-Status auf Seite: ${window.location.pathname}`);
+    DEBUG.log('Auth-Check', `Session-Hinweise im Storage:`, {
+        initialized: sessionInitialized ? 'Ja' : 'Nein',
+        manualSessionId: storedSessionId ? 'Vorhanden' : 'Nicht vorhanden'
+    });
+    
+    // Cookies prüfen (nur zu Debug-Zwecken)
+    DEBUG.cookie();
     
     try {
-        // Spezielle Behandlung für Produktionsumgebung
+        // Umgebungsinformationen für das Debugging
         const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-        console.log(`Umgebung: ${isProd ? 'Produktion' : 'Entwicklung'}`);
+        DEBUG.log('Auth-Check', `Umgebung: ${isProd ? 'Produktion' : 'Entwicklung'}`);
         
-        // Session-Status-Endpunkt-API direkt mit der vollen URL aufrufen
-        // Dies verhindert Probleme mit relativen URLs in verschiedenen Umgebungen
+        // Session-Check-URL
         const sessionCheckUrl = `${API_URL}/api/session-status`;
-        console.log(`Rufe Session-Check-API auf: ${sessionCheckUrl}`);
+        DEBUG.log('Auth-Check', `Session-Check-API-URL: ${sessionCheckUrl}`);
         
+        // Zusammenstellen der Request-Header
+        const headers = {
+            'Cache-Control': 'no-cache',
+            'X-Requested-With': 'fetch',
+            'X-Debug-Timestamp': new Date().toISOString()
+        };
+        
+        // Wenn wir eine manuell gespeicherte Session-ID haben, fügen wir sie als Header hinzu
+        // Dies ist ein Fallback für Umgebungen, in denen Cookies nicht funktionieren
+        if (storedSessionId) {
+            headers['X-Session-Id'] = storedSessionId;
+        }
+        
+        // Session-Status-Anfrage senden
         const response = await fetch(sessionCheckUrl, {
             method: 'GET',
-            credentials: 'include', // Wichtig: Sendet Cookies mit jeder Anfrage
-            cache: 'no-cache',      // Verhindert Caching der Auth-Antwort
-            headers: {
-                'Cache-Control': 'no-cache',
-                'X-Requested-With': 'fetch'  // Identifiziert AJAX-Anfragen
-            }
+            credentials: 'include', // Sendet Cookies (falls vorhanden)
+            cache: 'no-cache',      
+            headers: headers
         });
         
-        // Prüfen, ob wir eine leere Antwort erhalten haben
+        DEBUG.log('Auth-Check', `Server antwortete mit Status: ${response.status}`);
+        
+        // Response-Header analysieren
+        const responseHeaders = {};
+        response.headers.forEach((value, name) => {
+            responseHeaders[name] = value;
+        });
+        DEBUG.log('Auth-Check', 'Response-Header:', responseHeaders);
+        
+        // Antworttext extrahieren und prüfen
         const responseText = await response.text();
         if (!responseText || responseText.trim() === '') {
-            console.error('Leere Antwort vom Server erhalten');
+            DEBUG.log('Auth-Check', 'Leere Antwort vom Server erhalten');
             throw new Error('Leere Serverantwort');
         }
         
-        // Antwort parsen - mit Fehlerbehandlung
+        // Antwort parsen
         let data;
         try {
             data = JSON.parse(responseText);
+            DEBUG.log('Auth-Check', 'Geparste Session-Check-Daten:', data);
         } catch (parseError) {
-            console.error('Fehler beim Parsen der Serverantwort:', responseText);
+            DEBUG.log('Auth-Check', 'Fehler beim Parsen der Serverantwort:', responseText);
             throw new Error('Ungültiges JSON in Serverantwort');
         }
         
-        console.log('Session-Status-Antwort:', data);
-        
+        // Auswerten der Session-Status-Antwort
         if (response.ok && data.authenticated) {
-            console.log('✅ Session gültig - Benutzer authentifiziert');
+            DEBUG.log('Auth-Check', '✅ Session gültig - Benutzer authentifiziert');
             _isAuthenticated = true;
             
-            // Session-Hinweis im localStorage speichern
+            // Session-Status im Storage speichern
             localStorage.setItem('session_initialized', 'true');
+            
+            // Session-ID aus der Antwort speichern, falls vorhanden
+            if (data.sessionId) {
+                localStorage.setItem('manual_session_id', data.sessionId);
+                DEBUG.log('Auth-Check', 'Session-ID aus Antwort gespeichert');
+            }
             
             // Wenn auf Login-Seite oder Startseite, weiterleiten zur Karte
             if (window.location.pathname.includes('login.html') || window.location.pathname === '/' || window.location.pathname === '') {
-                console.log('Weiterleitung zur map.html...');
+                DEBUG.log('Auth-Check', 'Weiterleitung zur map.html...');
                 window.location.href = 'map.html';
             }
             return true;
         } else {
-            console.log('❌ Session ungültig - Benutzer nicht authentifiziert');
+            DEBUG.log('Auth-Check', '❌ Session ungültig - Benutzer nicht authentifiziert');
             _isAuthenticated = false;
             
-            // Session-Hinweis im localStorage entfernen
+            // Session-Hinweise im Storage löschen
             localStorage.removeItem('session_initialized');
+            localStorage.removeItem('manual_session_id');
             
-            // In Produktionsumgebung: Bei ungültiger Session nur umleiten, 
-            // wenn der Nutzer explizit nicht auf der Login-Seite ist
+            // Weiterleitung nur wenn nicht auf Login-Seite und redirectOnFail=true
             if (redirectOnFail && !window.location.pathname.includes('login.html')) {
-                console.log('Weiterleitung zur login.html wegen ungültiger Session...');
+                DEBUG.log('Auth-Check', 'Weiterleitung zur login.html wegen ungültiger Session');
                 
-                // Nur Meldung anzeigen, wenn wir nicht im Redirect-Loop sind
-                // (verhindern, dass mehrere Meldungen angezeigt werden)
+                // Loop-Schutz: Tracking im Session Storage
                 if (!sessionStorage.getItem('redirecting')) {
                     showGlobalMessage('Bitte melde dich an, um fortzufahren.', 'info');
                     sessionStorage.setItem('redirecting', 'true');
+                    
+                    // Redirect-Zähler erhöhen
+                    const redirectCount = parseInt(sessionStorage.getItem('redirect_count') || '0');
+                    sessionStorage.setItem('redirect_count', (redirectCount + 1).toString());
                 }
                 
-                // Verzögerung reduziert, um schneller zum Login zu kommen
+                // Wenn zu viele Redirects, keine weitere Weiterleitung
+                const redirectCount = parseInt(sessionStorage.getItem('redirect_count') || '0');
+                if (redirectCount > 3) {
+                    DEBUG.log('Auth-Check', '⚠️ Zu viele Redirects - Loop-Schutz aktiviert');
+                    showGlobalMessage('Zu viele Weiterleitungen erkannt. Bitte versuche, dich manuell anzumelden.', 'warning');
+                    return false;
+                }
+                
+                // Verzögerte Weiterleitung
                 setTimeout(() => {
                     window.location.href = 'login.html';
-                    // Nach Umleitung Flag zurücksetzen
                     sessionStorage.removeItem('redirecting');
                 }, 500);
             }
             return false;
         }
     } catch (error) {
-        console.error('Fehler beim Überprüfen des Auth-Status:', error);
+        DEBUG.log('Auth-Check', 'Fehler beim Überprüfen des Auth-Status:', error);
         
-        // Bei Netzwerkfehlern: Wenn es einen lokalen Hinweis auf eine aktive Session gibt,
-        // geben wir dem Benutzer den Vorteil des Zweifels und lassen ihn auf der Seite
-        if (lastSessionState === 'true') {
-            console.log('⚠️ Netzwerkfehler, aber lokaler Session-Hinweis vorhanden - Temporär authentifiziert');
+        // Fallback: Wenn lokale Hinweise auf eine Session vorhanden sind
+        if (sessionInitialized === 'true' || storedSessionId) {
+            DEBUG.log('Auth-Check', '⚠️ Auth-Fehler, aber lokale Session-Hinweise vorhanden - Bedingt authentifiziert');
             _isAuthenticated = true;
-            showGlobalMessage('Verbindungsfehler beim Prüfen deiner Session. Du kannst die App weiter nutzen, aber einige Funktionen sind möglicherweise eingeschränkt.', 'warning');
+            showGlobalMessage('Verbindungsprobleme bei der Session-Prüfung. Du kannst die App mit eingeschränktem Funktionsumfang nutzen.', 'warning');
             return true;
         }
         
         _isAuthenticated = false;
         
-        // Nur umleiten wenn nicht auf Login-Seite und Redirect erwünscht
+        // Weiterleitung nur bei Netzwerkfehlern + nicht auf Login-Seite + redirectOnFail=true
         if (redirectOnFail && !window.location.pathname.includes('login.html')) {
-            console.log('Weiterleitung zur login.html wegen Netzwerkfehler...');
-            showGlobalMessage('Verbindungsfehler. Bitte erneut anmelden.', 'error');
+            DEBUG.log('Auth-Check', 'Weiterleitung zur login.html wegen Netzwerkfehler');
+            showGlobalMessage('Verbindungsfehler beim Prüfen deiner Anmeldung. Bitte erneut anmelden.', 'error');
             
             setTimeout(() => {
                 window.location.href = 'login.html';
