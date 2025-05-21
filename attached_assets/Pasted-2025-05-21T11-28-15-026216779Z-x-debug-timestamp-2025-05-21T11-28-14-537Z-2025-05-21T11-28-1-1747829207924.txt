@@ -1,0 +1,54 @@
+2025-05-21T11:28:15.026216779Z   'x-debug-timestamp': '2025-05-21T11:28:14.537Z',
+2025-05-21T11:28:15.026219539Z   'x-forwarded-for': '185.187.245.33,24.206.112.106, 162.158.86.240, 10.223.64.76',
+2025-05-21T11:28:15.026222059Z   'x-forwarded-proto': 'https',
+2025-05-21T11:28:15.026225099Z   'x-request-start': '1747826895021154'
+2025-05-21T11:28:15.02622788Z }
+2025-05-21T11:28:15.026231029Z [DEBUG] Session-Status-Check für: 577abce7... (Quelle: cookie)
+2025-05-21T11:28:15.02623414Z [DEBUG] ✅ Session gültig
+2025-05-21T11:28:15.026320091Z [DEBUG] Cookie erneuert mit Optionen: {
+2025-05-21T11:28:15.026325801Z   httpOnly: true,
+2025-05-21T11:28:15.026328921Z   secure: true,
+2025-05-21T11:28:15.026331661Z   sameSite: 'none',
+2025-05-21T11:28:15.026334291Z   path: '/',
+2025-05-21T11:28:15.026336871Z   maxAge: 86400000
+2025-05-21T11:28:15.026339422Z }
+2025-05-21T11:28:16.556641435Z [2025-05-21T11:28:16.556Z] GET /img/profile-placeholder.jpg
+2025-05-21T11:28:40.533223847Z ==> Detected service running on port 10000
+2025-05-21T11:28:40.751532136Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2025-05-21T11:29:27.555365838Z [2025-05-21T11:29:27.555Z] GET /wordpress/wp-admin/setup-config.php
+2025-05-21T11:30:29.454807507Z [2025-05-21T11:30:29.454Z] GET /wordpress/wp-admin/setup-config.php
+2025-05-21T11:32:15.675784766Z [2025-05-21T11:32:15.675Z] GET /wp-admin/setup-config.php
+2025-05-21T11:33:02.754631818Z [2025-05-21T11:33:02.754Z] GET /wp-admin/setup-config.php
+2025-05-21T11:36:41.174887082Z ==> Deploying...
+2025-05-21T11:36:58.908207661Z Initializing database...
+2025-05-21T11:37:00.174195317Z ✅ Database connection successful
+2025-05-21T11:37:00.174481163Z Checking if locations table exists...
+2025-05-21T11:37:00.325896521Z ✅ locations table already exists
+2025-05-21T11:37:00.326040913Z Checking if couple_image table exists...
+2025-05-21T11:37:00.474883187Z ✅ couple_image table already exists
+2025-05-21T11:37:00.474903758Z ✅ Database initialization completed successfully
+2025-05-21T11:37:00.4764239Z ✅ Server running on port 10000
+2025-05-21T11:37:00.476523172Z 📝 API documentation available at http://localhost:10000/
+2025-05-21T11:37:00.476534212Z 🔐 Login page available at http://localhost:10000/login
+2025-05-21T11:37:01.822978133Z ==> Your service is live 🎉
+2025-05-21T11:37:29.37887837Z [2025-05-21T11:37:29.378Z] GET /api/locations
+2025-05-21T11:37:29.381331471Z 🔒 Validating session: 577abce709e0e539db81483629af283de906d26d25e3caa3f2232cc811e6c4aa
+2025-05-21T11:37:29.381456284Z ❌ Invalid session: 577abce709e0e539db81483629af283de906d26d25e3caa3f2232cc811e6c4aa
+2025-05-21T11:37:30.673001176Z [2025-05-21T11:37:30.672Z] GET /api/session-status
+2025-05-21T11:37:30.673396585Z 🔒 Validating session: 577abce709e0e539db81483629af283de906d26d25e3caa3f2232cc811e6c4aa
+2025-05-21T11:37:30.673544797Z ❌ Invalid session: 577abce709e0e539db81483629af283de906d26d25e3caa3f2232cc811e6c4aa
+2025-05-21T11:37:32.695554223Z [2025-05-21T11:37:32.695Z] GET /img/profile-placeholder.jpg
+2025-05-21T11:37:34.461277397Z [2025-05-21T11:37:34.460Z] GET /api/session-status
+2025-05-21T11:37:34.461294977Z 🔒 Validating session: 577abce709e0e539db81483629af283de906d26d25e3caa3f2232cc811e6c4aa
+2025-05-21T11:37:34.461299377Z ❌ Invalid session: 577abce709e0e539db81483629af283de906d26d25e3caa3f2232cc811e6c4aa
+2025-05-21T11:42:09.746135813Z ==> Detected service running on port 10000
+2025-05-21T11:42:09.841690235Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2025-05-21T11:46:37.126447018Z [2025-05-21T11:46:37.116Z] GET /wp-admin/setup-config.php
+2025-05-21T11:46:56.191633281Z [2025-05-21T11:46:56.191Z] GET /wordpress/wp-admin/setup-config.php
+2025-05-21T11:49:25.520881799Z [2025-05-21T11:49:25.520Z] GET /wp-admin/setup-config.php
+2025-05-21T11:49:29.82363842Z [2025-05-21T11:49:29.822Z] GET /wordpress/wp-admin/setup-config.php
+2025-05-21T11:50:09.972864874Z [2025-05-21T11:50:09.972Z] GET /wp-admin/setup-config.php
+2025-05-21T12:02:10.765718436Z [2025-05-21T12:02:10.765Z] GET /wp-admin/setup-config.php
+2025-05-21T12:02:31.363988704Z [2025-05-21T12:02:31.362Z] GET /wordpress/wp-admin/setup-config.php
+2025-05-21T12:04:22.587538081Z [2025-05-21T12:04:22.587Z] GET /wordpress/wp-admin/setup-config.php
+2025-05-21T12:05:41.815804951Z [2025-05-21T12:05:41.815Z] GET /wp-admin/setup-config.php

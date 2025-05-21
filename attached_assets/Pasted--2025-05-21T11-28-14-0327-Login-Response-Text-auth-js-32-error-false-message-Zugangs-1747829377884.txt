@@ -1,0 +1,59 @@
+[2025-05-21T11:28:14.0327] [Login] Response-Text:
+auth. js: 32
+("error": false, "message" : "Zugangscode
+akzeptiert"
+'"sessionId": "577abce709eBe539db81483629af283de906d26d25e3cааЗ
+f2232cc811e6c4aa*
+,"debug" : ("sessionCreated":true, "timestamp": "2025-05-
+21T11:28:13.8952*,
+"cookieSet": true, "environment"/ "production", *secure_con
+nection": true, "cookieOptions":
+["httpOnly"; true, "secure"; true, "sameSite": "none", "path": "/", "maxAg" : 8640
+0000)17
+[2025-05-21711:28:14.033Z] [Login] Geparste Response-Daten:
+コリth。コミ：32
+terror: false,
+message: "Zugongscode arzeptierts sessionio: 577abce?0
+9e0e539db81483629af283de906d26d25e3caa3f2232cc811e6c4a0', debug: (m]]
+[2025-05-21T11:28:14.033Z] [Login]
+Login erfolgreich -
+Session soll erstellt sein
+auth. 15:34
+[2025-05-21T11:28:14.033Z] [Login] Warte 500ms Für Cookie-
+auth. 15:34
+Verarbeitung...
+[2025-05-21T11:28:14.537Z] [Login] Cookies nach Verzögerung:
+[2025-05-21T11:28:14.537Z] [Cookies] Aktuelle Cookies (0):
+auth. js: 34
+auth. js: 32
+[2025-05-21T11:28:14.537Z] [Cookies] Cookie-Namen vorhanden:
+auth. js: 32
+[2025-05-21T11:28:14.537Z] [Login] Cookie-Zusammenfassung:
+Vor Login: Keine Cookies
+- Nach Server-Antwort: Keine Cookies
+- Nach Verzögerung: Keine Cookies
+[2025-05-21T11:28:14.537Z] [Login] Überprüfe Session mit:
+/api/session-status
+auth. js : 34
+auth. js: 34
+[2025-05-21T11:28:15.192Z] [Login] Session-Check antwortete
+mit Status: 200
+auth. js: 34
+[2025-05-21T11:28:15.192Z] [Login] Session-Check Response-
+Text: ("authenticated":true, "message" : "Session
+auth. 15:32
+gültig", "sessionId": "577abce709e0e539db81483629af283de906d26d25e3caa3f223
+2cc811e6c4aa"}
+[2025-05-21T11: 28:15.192Z] [Login] Geparste Session-Check-Daten:
+auth. is:32
+, fauthenticated: true,
+e0e539db81483629qf283de906d26d25e3ca03f2232cc811e6c4a0'}
+message: 'Session gültig', sessionId: '577abce709
+[2025-05- 21T11:28:15.192Z] [Login]
+validiert
+Session erfolgreich
+auth. 15:24
+Login war erfolgreich - UI wird aktualisiert
+Weiterleitung zu map.html in 1 Sekunde...
+auth. 1s:502
+auth.J5:509
