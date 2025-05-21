@@ -31,18 +31,21 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5000',
-      'https://susio2.onrender.com'
+      'https://susio2.onrender.com',
+      'https://susio.site'
     ];
     
+    // In Entwicklungsumgebung oder für erlaubte Origins immer erlauben
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
+      console.log(`❌ CORS blocked for origin: ${origin}`);
       callback(new Error('CORS policy violation'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Session-Id', 'Cache-Control']
 }));
 
 // Statische Dateien aus dem public-Ordner bereitstellen

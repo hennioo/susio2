@@ -208,8 +208,13 @@
         async function login() {
             log('Login-Prozess wird gestartet...');
             
-            // Demo-Zugangscode
-            const accessCode = 'susiodemo';
+            // Frage nach dem Zugangscode
+            const accessCode = prompt('Bitte gib den Zugangscode ein:', '');
+            
+            if (!accessCode) {
+                log('Login abgebrochen - kein Zugangscode eingegeben', true);
+                return false;
+            }
             
             try {
                 // Login-Anfrage senden
