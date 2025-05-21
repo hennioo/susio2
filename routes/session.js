@@ -16,15 +16,22 @@ router.get('/session-status', (req, res) => {
   console.log(`[DEBUG] Headers:`, req.headers);
   
   // PRIORITÄT: X-Session-Id Header (wegen Cookie-Problemen bei Render)
-  // Zuerst prüfen wir den Header, dann erst Cookies als Fallback
+  // Zuerst prüfen wir den Header, dann URL-Parameter, dann erst Cookies als letzten Fallback
   let sessionId = req.headers['x-session-id'];
   let sessionSource = 'header';
   
-  // Fallback: Falls kein Header, versuchen wir Cookies
+  // Fallback 1: URL-Parameter (für direkte Links und iframes)
+  if (!sessionId && req.query.sessionId) {
+    sessionId = req.query.sessionId;
+    sessionSource = 'url-parameter';
+    console.log(`[DEBUG] Fallback 1: Session-ID aus URL-Parameter gefunden`);
+  }
+  
+  // Fallback 2: Falls kein Header und kein URL-Parameter, versuchen wir Cookies
   if (!sessionId && req.cookies.sessionId) {
     sessionId = req.cookies.sessionId;
     sessionSource = 'cookie';
-    console.log(`[DEBUG] Fallback: Session-ID aus Cookie gefunden`);
+    console.log(`[DEBUG] Fallback 2: Session-ID aus Cookie gefunden`);
   }
   
   console.log(`[DEBUG] Session-Status-Check für: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine Session'} (Quelle: ${sessionSource})`);

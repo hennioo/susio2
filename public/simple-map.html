@@ -199,9 +199,22 @@
             ? `http://${window.location.hostname}:3000`
             : '';
         
-        // Session-ID aus localStorage holen
+        // Session-ID aus verschiedenen Quellen holen
         function getStoredSessionId() {
-            return localStorage.getItem('manual_session_id');
+            // Zuerst aus URL-Parametern prüfen
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlSessionId = urlParams.get('sessionId');
+            
+            if (urlSessionId) {
+                log('Session-ID aus URL-Parameter gefunden');
+                // In den localStorage speichern für zukünftige Anfragen
+                localStorage.setItem('manual_session_id', urlSessionId);
+                return urlSessionId;
+            }
+            
+            // Dann aus localStorage 
+            const storedSessionId = localStorage.getItem('manual_session_id');
+            return storedSessionId;
         }
         
         // Authentifizierung prüfen
