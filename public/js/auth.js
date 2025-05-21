@@ -1,16 +1,47 @@
 // API Basis-URL (verbessert für Render-Deployment)
 const API_URL = (() => {
+    // Ausführliches Debugging der URL-Konfiguration
+    console.log('DEBUG: Browser-Umgebung', {
+        hostname: window.location.hostname,
+        protocol: window.location.protocol,
+        href: window.location.href,
+        userAgent: navigator.userAgent
+    });
+    
     // Lokale Entwicklungsumgebung
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return `http://${window.location.hostname}:10000`;
+        const url = `http://${window.location.hostname}:10000`;
+        console.log('DEBUG: Lokale API-URL konfiguriert:', url);
+        return url;
     }
     
     // Produktionsumgebung (Render)
     // Wir verwenden die aktuelle Basis-URL, um sicherzustellen,
     // dass wir immer die richtige Domain verwenden, unabhängig davon,
     // ob es sich um eine .onrender.com oder eine benutzerdefinierte Domain handelt
+    console.log('DEBUG: Produktions-API-URL konfiguriert mit relativer URL');
     return '';
 })();
+
+// Debug-Logger für wichtige Ereignisse
+const DEBUG = {
+    log: (bereich, nachricht, daten = null) => {
+        const zeitstempel = new Date().toISOString();
+        const formatierteNachricht = `[${zeitstempel}] [${bereich}] ${nachricht}`;
+        if (daten) {
+            console.log(formatierteNachricht, daten);
+        } else {
+            console.log(formatierteNachricht);
+        }
+    },
+    
+    cookie: () => {
+        const cookies = document.cookie ? document.cookie.split(';').map(c => c.trim()) : [];
+        DEBUG.log('Cookies', `Aktuelle Cookies (${cookies.length}):`, cookies);
+        DEBUG.log('Cookies', 'Cookie-Namen vorhanden:', cookies.map(c => c.split('=')[0]));
+        return cookies.length > 0;
+    }
+};
 
 // Session-Management
 // Zentraler Auth-Status mit Getter für bessere Kapselung
@@ -151,72 +182,145 @@ function startAuthStatusMonitor(intervalMs = 60000) {
     }, intervalMs);
 }
 
-// Login-Funktion
+// Login-Funktion mit erweitertem Debugging
 async function login(accessCode) {
     try {
-        console.log('Login-Versuch mit Zugangscode...');
+        DEBUG.log('Login', 'Login-Versuch wird gestartet');
+        DEBUG.cookie(); // Cookies vor dem Login prüfen
         
-        // Klare Logging-Ausgabe vor dem Serveraufruf
-        console.log(`API-Endpunkt für Login: ${API_URL}/verify-access`);
+        // API-Endpunkt präzise zusammenbauen für besseres Debugging
+        const loginEndpoint = `${API_URL}/verify-access`;
+        DEBUG.log('Login', `Verwende Login-Endpunkt: ${loginEndpoint}`);
         
-        const response = await fetch(`${API_URL}/verify-access`, {
+        // Zusätzliche Request-Header für besseres Debugging
+        const fetchOptions = {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Client-Version': '1.0.0',
+                'X-Debug-Timestamp': new Date().toISOString()
             },
             credentials: 'include', // Wichtig für Cookie-Speicherung
             body: JSON.stringify({ accessCode })
+        };
+        
+        DEBUG.log('Login', 'Sende Login-Request mit Optionen:', fetchOptions);
+        
+        // Zugangscode senden und Response erfassen
+        const response = await fetch(loginEndpoint, fetchOptions);
+        DEBUG.log('Login', `Server antwortete mit Status: ${response.status} ${response.statusText}`);
+        
+        // Response-Header für Debugging anzeigen
+        const responseHeaders = {};
+        response.headers.forEach((value, name) => {
+            responseHeaders[name] = value;
         });
+        DEBUG.log('Login', 'Response-Header:', responseHeaders);
         
-        // Cookie-Debugging (nur Präsenz prüfen, nicht den Wert auslesen)
-        const hasCookies = document.cookie.length > 0;
-        console.log(`Hat der Browser allgemeine Cookies? ${hasCookies ? 'Ja' : 'Nein'}`);
-        console.log(`Cookie-Debug: HTTP-only Cookies sind nicht über JavaScript auslesbar`);
+        // Cookies nach dem Response prüfen
+        DEBUG.log('Login', 'Cookies nach Server-Antwort:');
+        const hasCookiesAfterResponse = DEBUG.cookie();
         
-        const data = await response.json();
-        console.log('Login-Server-Antwort:', data);
+        // Response-Daten erfassen
+        let data;
+        try {
+            const responseText = await response.text();
+            DEBUG.log('Login', 'Response-Text:', responseText);
+            
+            if (responseText && responseText.trim() !== '') {
+                data = JSON.parse(responseText);
+                DEBUG.log('Login', 'Geparste Response-Daten:', data);
+            } else {
+                DEBUG.log('Login', 'Leere Response vom Server erhalten');
+                throw new Error('Leere Antwort vom Server');
+            }
+        } catch (parseError) {
+            DEBUG.log('Login', 'Fehler beim Parsen der Server-Antwort:', parseError);
+            throw new Error(`Konnte Server-Antwort nicht verarbeiten: ${parseError.message}`);
+        }
         
         if (response.ok && !data.error) {
-            console.log('✅ Login erfolgreich - Session erstellt');
+            DEBUG.log('Login', '✅ Login erfolgreich - Session soll erstellt sein');
             
-            // Kleine Verzögerung, um sicherzustellen, dass die Session gespeichert wurde
-            await new Promise(resolve => setTimeout(resolve, 300));
+            // Kurze Verzögerung hinzufügen, damit Cookie-Verarbeitung abgeschlossen werden kann
+            DEBUG.log('Login', 'Warte 500ms für Cookie-Verarbeitung...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Cookies nach der Verzögerung erneut prüfen
+            DEBUG.log('Login', 'Cookies nach Verzögerung:');
+            const hasCookiesAfterDelay = DEBUG.cookie();
+            
+            DEBUG.log('Login', `Cookie-Zusammenfassung: 
+                - Vor Login: ${hasCookiesAfterResponse ? 'Cookies vorhanden' : 'Keine Cookies'}
+                - Nach Server-Antwort: ${hasCookiesAfterResponse ? 'Cookies vorhanden' : 'Keine Cookies'}
+                - Nach Verzögerung: ${hasCookiesAfterDelay ? 'Cookies vorhanden' : 'Keine Cookies'}`
+            );
             
             // Überprüfung über den Session-Status-Endpunkt
-            const sessionCheckResponse = await fetch(`${API_URL}/api/session-status`, {
+            const sessionEndpoint = `${API_URL}/api/session-status`;
+            DEBUG.log('Login', `Überprüfe Session mit: ${sessionEndpoint}`);
+            
+            const sessionCheckResponse = await fetch(sessionEndpoint, {
                 method: 'GET',
-                credentials: 'include' // Wichtig für Cookie-Übertragung
+                credentials: 'include', // Wichtig für Cookie-Übertragung
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'X-Debug-Timestamp': new Date().toISOString()
+                }
             });
             
-            const sessionData = await sessionCheckResponse.json();
-            console.log('Session-Validierung nach Login:', sessionData);
+            DEBUG.log('Login', `Session-Check antwortete mit Status: ${sessionCheckResponse.status}`);
             
-            if (sessionCheckResponse.ok && sessionData.authenticated) {
-                console.log('✅ Session erfolgreich validiert');
-                _isAuthenticated = true;
+            try {
+                const sessionResponseText = await sessionCheckResponse.text();
+                DEBUG.log('Login', 'Session-Check Response-Text:', sessionResponseText);
                 
-                // Lokale Storage-Markierung (ohne sensible Daten)
-                // Hilft bei der Erkennung, ob ein Benutzer angemeldet war
-                localStorage.setItem('session_initialized', 'true');
-                
-                return { 
-                    success: true, 
-                    message: 'Erfolgreich angemeldet!', 
-                    redirect: 'map.html' 
-                };
-            } else {
-                console.error('❌ Session-Validierung fehlgeschlagen nach Login');
+                if (sessionResponseText && sessionResponseText.trim() !== '') {
+                    const sessionData = JSON.parse(sessionResponseText);
+                    DEBUG.log('Login', 'Geparste Session-Check-Daten:', sessionData);
+                    
+                    if (sessionCheckResponse.ok && sessionData.authenticated) {
+                        DEBUG.log('Login', '✅ Session erfolgreich validiert');
+                        _isAuthenticated = true;
+                        
+                        // Lokale Storage-Markierung (ohne sensible Daten)
+                        localStorage.setItem('session_initialized', 'true');
+                        localStorage.setItem('last_login_time', new Date().toISOString());
+                        
+                        // Erfolgsinformationen zurückgeben
+                        return { 
+                            success: true, 
+                            message: 'Erfolgreich angemeldet!', 
+                            redirect: 'map.html' 
+                        };
+                    } else {
+                        DEBUG.log('Login', '❌ Session-Validierung fehlgeschlagen nach Login');
+                        localStorage.removeItem('session_initialized');
+                        _isAuthenticated = false;
+                        
+                        return { 
+                            success: false, 
+                            message: 'Login erfolgreich, aber Session konnte nicht validiert werden. Die Session wurde möglicherweise nicht korrekt erstellt. Bitte versuche es erneut.' 
+                        };
+                    }
+                } else {
+                    DEBUG.log('Login', '❌ Leere Antwort vom Session-Check');
+                    throw new Error('Leere Antwort vom Session-Check');
+                }
+            } catch (sessionParseError) {
+                DEBUG.log('Login', 'Fehler beim Parsen der Session-Check-Antwort:', sessionParseError);
                 return { 
                     success: false, 
-                    message: 'Login erfolgreich, aber Session konnte nicht validiert werden. Bitte erneut versuchen.' 
+                    message: `Fehler bei der Session-Validierung: ${sessionParseError.message}` 
                 };
             }
         } else {
-            console.log('❌ Login fehlgeschlagen:', data.message);
+            DEBUG.log('Login', '❌ Login fehlgeschlagen:', data.message);
             return { success: false, message: data.message || 'Ungültiger Zugangscode.' };
         }
     } catch (error) {
-        console.error('Login-Fehler:', error);
+        DEBUG.log('Login', 'Kritischer Fehler bei der Anmeldung:', error);
         return { success: false, message: `Fehler bei der Anmeldung: ${error.message}` };
     }
 }
