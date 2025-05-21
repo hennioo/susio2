@@ -228,7 +228,7 @@ function startAuthStatusMonitor(intervalMs = 60000) {
     }, intervalMs);
 }
 
-// Login-Funktion mit erweitertem Debugging
+// Login-Funktion mit erweitertem Debugging und verbesserter Session-Handhabung
 async function login(accessCode) {
     try {
         DEBUG.log('Login', 'Login-Versuch wird gestartet');
@@ -288,6 +288,16 @@ async function login(accessCode) {
         if (response.ok && !data.error) {
             DEBUG.log('Login', '✅ Login erfolgreich - Session soll erstellt sein');
             
+            // WICHTIG: Session-ID aus der Antwort sichern
+            // Dies ist ein kritischer Fix für Browser, die mit den Cookies Probleme haben
+            if (data.sessionId) {
+                DEBUG.log('Login', `Session-ID in Antwort gefunden: ${data.sessionId.substring(0, 8)}...`);
+                localStorage.setItem('manual_session_id', data.sessionId);
+                DEBUG.log('Login', 'Session-ID im localStorage gespeichert');
+            } else {
+                DEBUG.log('Login', 'Keine Session-ID in der Antwort gefunden!');
+            }
+            
             // Kurze Verzögerung hinzufügen, damit Cookie-Verarbeitung abgeschlossen werden kann
             DEBUG.log('Login', 'Warte 500ms für Cookie-Verarbeitung...');
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -302,18 +312,28 @@ async function login(accessCode) {
                 - Nach Verzögerung: ${hasCookiesAfterDelay ? 'Cookies vorhanden' : 'Keine Cookies'}`
             );
             
-            // Überprüfung über den Session-Status-Endpunkt
+            // Session-Status-Endpunkt aufrufen mit Header-basierter Session-ID
             const sessionEndpoint = `${API_URL}/api/session-status`;
             DEBUG.log('Login', `Überprüfe Session mit: ${sessionEndpoint}`);
             
+            // Erstelle Headers für die Session-Validierung
+            const sessionCheckHeaders = {
+                'Cache-Control': 'no-cache',
+                'X-Debug-Timestamp': new Date().toISOString()
+            };
+            
+            // WICHTIG: Manuelle Session-ID als Header hinzufügen, wenn Cookie nicht gesetzt wurde
+            const storedSessionId = localStorage.getItem('manual_session_id');
+            if (storedSessionId && !hasCookiesAfterDelay) {
+                DEBUG.log('Login', 'Verwende gespeicherte Session-ID im Header (Cookie-Fallback)');
+                sessionCheckHeaders['X-Session-Id'] = storedSessionId;
+            }
+            
             const sessionCheckResponse = await fetch(sessionEndpoint, {
                 method: 'GET',
-                credentials: 'include', // Wichtig für Cookie-Übertragung
+                credentials: 'include',
                 cache: 'no-cache',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'X-Debug-Timestamp': new Date().toISOString()
-                }
+                headers: sessionCheckHeaders
             });
             
             DEBUG.log('Login', `Session-Check antwortete mit Status: ${sessionCheckResponse.status}`);
@@ -326,11 +346,17 @@ async function login(accessCode) {
                     const sessionData = JSON.parse(sessionResponseText);
                     DEBUG.log('Login', 'Geparste Session-Check-Daten:', sessionData);
                     
+                    // Wenn Session-ID in der Antwort zurückkommt, aktualisieren
+                    if (sessionData.sessionId) {
+                        DEBUG.log('Login', 'Session-ID aus Session-Check-Antwort aktualisiert');
+                        localStorage.setItem('manual_session_id', sessionData.sessionId);
+                    }
+                    
                     if (sessionCheckResponse.ok && sessionData.authenticated) {
                         DEBUG.log('Login', '✅ Session erfolgreich validiert');
                         _isAuthenticated = true;
                         
-                        // Lokale Storage-Markierung (ohne sensible Daten)
+                        // Lokale Storage-Markierungen aktualisieren
                         localStorage.setItem('session_initialized', 'true');
                         localStorage.setItem('last_login_time', new Date().toISOString());
                         
@@ -343,6 +369,7 @@ async function login(accessCode) {
                     } else {
                         DEBUG.log('Login', '❌ Session-Validierung fehlgeschlagen nach Login');
                         localStorage.removeItem('session_initialized');
+                        localStorage.removeItem('manual_session_id');
                         _isAuthenticated = false;
                         
                         return { 
