@@ -1,0 +1,85 @@
+[2025-05-21T13:28:52.330Z] Seite geladen, prüfe bestehende Session
+[2025-05-21T13:28:52.331Z] Session wird überprüft...
+[2025-05-21T13:28:52.332Z] Keine Session-ID im localStorage gefunden
+[2025-05-21T13:28:52.555Z] Server-Antwort Status:
+401
+[2025-05-21T13:28:52.556Z] Response-Header:
+{
+  "access-control-allow-credentials": "true",
+  "alt-svc": "h3=\":443\"; ma=86400",
+  "cf-cache-status": "DYNAMIC",
+  "cf-ray": "94346b5fad29e50b-TXL",
+  "content-encoding": "br",
+  "content-length": "60",
+  "content-type": "application/json; charset=utf-8",
+  "date": "Wed, 21 May 2025 13:28:52 GMT",
+  "etag": "W/\"3d-g2+zhuQIYJXDr/WE47rVDoe9KWM\"",
+  "rndr-id": "0eaa688a-6c6a-4e32",
+  "server": "cloudflare",
+  "vary": "Origin, Accept-Encoding",
+  "x-powered-by": "Express",
+  "x-render-origin-server": "Render"
+}
+[2025-05-21T13:28:52.556Z] Response-Text:
+{"error":true,"message":"Unauthorized. Please log in first."}
+[2025-05-21T13:28:52.556Z] ❌ Session ungültig oder abgelaufen
+[2025-05-21T13:29:13.364Z] Login-Versuch wird gestartet...
+[2025-05-21T13:29:13.806Z] Server-Antwort Status:
+200
+[2025-05-21T13:29:13.807Z] Response-Header:
+{
+  "access-control-allow-credentials": "true",
+  "access-control-allow-origin": "https://susio2.onrender.com",
+  "alt-svc": "h3=\":443\"; ma=86400",
+  "cf-cache-status": "DYNAMIC",
+  "cf-ray": "94346be35b05e50b-TXL",
+  "content-encoding": "br",
+  "content-length": "186",
+  "content-type": "application/json; charset=utf-8",
+  "date": "Wed, 21 May 2025 13:29:13 GMT",
+  "etag": "W/\"fc-k0zkq/eBcGcQMfX1XV5BX5bZF30\"",
+  "rndr-id": "d1ff66c6-6a71-4b84",
+  "server": "cloudflare",
+  "vary": "Origin, Accept-Encoding",
+  "x-debug-session": "Created",
+  "x-debug-time": "2025-05-21T13:29:13.677Z",
+  "x-powered-by": "Express",
+  "x-render-origin-server": "Render",
+  "x-session-method": "header-only"
+}
+[2025-05-21T13:29:13.807Z] Response-Text:
+{"error":false,"message":"Zugangscode akzeptiert","sessionId":"0a104f22239b1e1791b7e93fa42d603ff697e448a19d750a294a846857345110","debug":{"sessionCreated":true,"timestamp":"2025-05-21T13:29:13.677Z","environment":"production","secure_connection":true}}
+[2025-05-21T13:29:13.807Z] ✅ Login erfolgreich!
+[2025-05-21T13:29:13.807Z] Session-ID gespeichert:
+{
+  "sessionId": "0a104f22..."
+}
+[2025-05-21T13:29:27.368Z] Session wird überprüft...
+[2025-05-21T13:29:27.369Z] Verwende Session-ID aus localStorage
+{
+  "sessionId": "0a104f22..."
+}
+[2025-05-21T13:29:27.938Z] Server-Antwort Status:
+200
+[2025-05-21T13:29:27.938Z] Response-Header:
+{
+  "access-control-allow-credentials": "true",
+  "alt-svc": "h3=\":443\"; ma=86400",
+  "cf-cache-status": "DYNAMIC",
+  "cf-ray": "94346c3aab5fe50b-TXL",
+  "content-encoding": "br",
+  "content-length": "110",
+  "content-type": "application/json; charset=utf-8",
+  "date": "Wed, 21 May 2025 13:29:27 GMT",
+  "etag": "W/\"81-tue5iumPSY7v/zwucvxySW4qLNI\"",
+  "rndr-id": "3e01f466-9e84-4628",
+  "server": "cloudflare",
+  "vary": "Origin, Accept-Encoding",
+  "x-confirmed-session-id": "0a104f22239b1e1791b7e93fa42d603ff697e448a19d750a294a846857345110",
+  "x-powered-by": "Express",
+  "x-render-origin-server": "Render"
+}
+[2025-05-21T13:29:27.938Z] Response-Text:
+{"authenticated":true,"message":"Session gültig","sessionId":"0a104f22239b1e1791b7e93fa42d603ff697e448a19d750a294a846857345110"}
+[2025-05-21T13:29:27.938Z] ✅ Session ist gültig!
+[2025-05-21T13:29:27.938Z] Session-ID aktualisiert
