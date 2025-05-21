@@ -13,28 +13,44 @@ function isAuthenticated() {
 }
 
 // Überprüft, ob der Benutzer angemeldet ist und handelt entsprechend
+// Nutzt explizit den neuen /api/session-status Endpunkt
 async function checkAuthStatus(redirectOnFail = true) {
+    // Debugausgabe: URL identifizieren
+    console.log(`Prüfe Auth-Status. Aktuelle Seite: ${window.location.pathname}`);
+    
     try {
-        const response = await fetch(`${API_URL}/api/locations`, {
+        // Verwenden des speziellen Session-Status-Endpunkts statt /api/locations
+        const response = await fetch(`${API_URL}/api/session-status`, {
             method: 'GET',
-            credentials: 'include'
+            credentials: 'include' // Wichtig für Cookie-Übertragung
         });
         
-        if (response.ok) {
+        const data = await response.json();
+        console.log('Session-Status-Antwort:', data);
+        
+        if (response.ok && data.authenticated) {
+            console.log('✅ Session gültig - Benutzer authentifiziert');
             _isAuthenticated = true;
             
-            // Wenn auf Login-Seite, weiterleiten zur Karte
+            // Wenn auf Login-Seite oder Startseite, weiterleiten zur Karte
             if (window.location.pathname.includes('login.html') || window.location.pathname === '/' || window.location.pathname === '') {
+                console.log('Weiterleitung zur map.html...');
                 window.location.href = 'map.html';
             }
             return true;
         } else {
+            console.log('❌ Session ungültig - Benutzer nicht authentifiziert');
             _isAuthenticated = false;
             
-            // Wenn nicht auf Login-Seite und Redirect gewünscht, zur Login-Seite weiterleiten
+            // Nur umleiten, wenn wir nicht auf der Login-Seite sind und Redirect gewünscht ist
             if (redirectOnFail && !window.location.pathname.includes('login.html')) {
+                console.log('Weiterleitung zur login.html wegen ungültiger Session...');
                 showGlobalMessage('Bitte melde dich an, um fortzufahren.', 'info');
-                window.location.href = 'login.html';
+                
+                // Kleine Verzögerung bei der Umleitung, damit die Nachricht gesehen werden kann
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
             }
             return false;
         }
@@ -42,10 +58,15 @@ async function checkAuthStatus(redirectOnFail = true) {
         console.error('Fehler beim Überprüfen des Auth-Status:', error);
         _isAuthenticated = false;
         
-        // Bei Fehlern zur Login-Seite leiten
+        // Bei Fehlern zur Login-Seite leiten, aber nur wenn gewünscht und nicht bereits auf Login-Seite
         if (redirectOnFail && !window.location.pathname.includes('login.html')) {
+            console.log('Weiterleitung zur login.html wegen Netzwerkfehler...');
             showGlobalMessage('Verbindungsfehler. Bitte erneut anmelden.', 'error');
-            window.location.href = 'login.html';
+            
+            // Kleine Verzögerung bei der Umleitung
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
         }
         return false;
     }
@@ -68,21 +89,45 @@ function startAuthStatusMonitor(intervalMs = 60000) {
 // Login-Funktion
 async function login(accessCode) {
     try {
+        console.log('Login-Versuch mit Zugangscode...');
+        
         const response = await fetch(`${API_URL}/verify-access`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            credentials: 'include',
+            credentials: 'include', // Wichtig für Cookie-Speicherung
             body: JSON.stringify({ accessCode })
         });
         
         const data = await response.json();
+        console.log('Login-Server-Antwort:', data);
         
         if (response.ok && !data.error) {
-            _isAuthenticated = true;
-            return { success: true, message: 'Erfolgreich angemeldet!' };
+            console.log('✅ Login erfolgreich - Session erstellt');
+            
+            // Zusätzliche Überprüfung über den Session-Status-Endpunkt
+            // um sicherzustellen, dass die Session korrekt gespeichert wurde
+            const sessionCheckResponse = await fetch(`${API_URL}/api/session-status`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            
+            const sessionData = await sessionCheckResponse.json();
+            console.log('Session-Validierung nach Login:', sessionData);
+            
+            if (sessionCheckResponse.ok && sessionData.authenticated) {
+                _isAuthenticated = true;
+                return { success: true, message: 'Erfolgreich angemeldet!', redirect: 'map.html' };
+            } else {
+                console.error('❌ Session-Validierung fehlgeschlagen nach erfolgreichem Login');
+                return { 
+                    success: false, 
+                    message: 'Login erfolgreich, aber Session konnte nicht validiert werden. Bitte erneut versuchen.' 
+                };
+            }
         } else {
+            console.log('❌ Login fehlgeschlagen:', data.message);
             return { success: false, message: data.message || 'Ungültiger Zugangscode.' };
         }
     } catch (error) {

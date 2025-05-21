@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const locationsRoutes = require('./routes/locations');
 const uploadsRoutes = require('./routes/uploads');
 const statsRoutes = require('./routes/stats');
+const sessionRoutes = require('./routes/session');
 
 // Load environment variables
 dotenv.config();
@@ -58,6 +59,7 @@ app.use('/', authRoutes);
 app.use('/api/locations', uploadsRoutes);
 app.use('/api', locationsRoutes);
 app.use('/api', statsRoutes);
+app.use('/api', sessionRoutes);
 
 // API Info Route
 app.get('/api-info', (req, res) => {
