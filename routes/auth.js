@@ -69,9 +69,9 @@ router.get('/login', (req, res) => {
                 // Store session ID in cookie
                 document.cookie = \`sessionId=\${data.sessionId}; path=/\`;
                 
-                // Redirect to main page after a short delay
+                // Redirect to map page after a short delay
                 setTimeout(() => {
-                  window.location.href = '/';
+                  window.location.href = '/map.html';
                 }, 1500);
               }
             } catch (error) {
