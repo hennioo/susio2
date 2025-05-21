@@ -1,7 +1,16 @@
-// API Basis-URL
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? `http://${window.location.hostname}:10000` 
-    : '';
+// API Basis-URL (verbessert für Render-Deployment)
+const API_URL = (() => {
+    // Lokale Entwicklungsumgebung
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return `http://${window.location.hostname}:10000`;
+    }
+    
+    // Produktionsumgebung (Render)
+    // Wir verwenden die aktuelle Basis-URL, um sicherzustellen,
+    // dass wir immer die richtige Domain verwenden, unabhängig davon,
+    // ob es sich um eine .onrender.com oder eine benutzerdefinierte Domain handelt
+    return '';
+})();
 
 // Session-Management
 // Zentraler Auth-Status mit Getter für bessere Kapselung
@@ -13,24 +22,59 @@ function isAuthenticated() {
 }
 
 // Überprüft, ob der Benutzer angemeldet ist und handelt entsprechend
-// Nutzt explizit den neuen /api/session-status Endpunkt
+// Speziell optimiert für Render Production vs lokale Entwicklung
 async function checkAuthStatus(redirectOnFail = true) {
-    // Debugausgabe: URL identifizieren
+    // Status der letzten Session aus localStorage abrufen (falls vorhanden)
+    // Dies ist nur ein Hinweis - die tatsächliche Autorisierung erfolgt durch server-side checks
+    const lastSessionState = localStorage.getItem('session_initialized');
+    
     console.log(`Prüfe Auth-Status. Aktuelle Seite: ${window.location.pathname}`);
+    console.log(`Lokaler Session-Hinweis: ${lastSessionState ? 'Vorhanden' : 'Nicht vorhanden'}`);
     
     try {
-        // Verwenden des speziellen Session-Status-Endpunkts statt /api/locations
-        const response = await fetch(`${API_URL}/api/session-status`, {
+        // Spezielle Behandlung für Produktionsumgebung
+        const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        console.log(`Umgebung: ${isProd ? 'Produktion' : 'Entwicklung'}`);
+        
+        // Session-Status-Endpunkt-API direkt mit der vollen URL aufrufen
+        // Dies verhindert Probleme mit relativen URLs in verschiedenen Umgebungen
+        const sessionCheckUrl = `${API_URL}/api/session-status`;
+        console.log(`Rufe Session-Check-API auf: ${sessionCheckUrl}`);
+        
+        const response = await fetch(sessionCheckUrl, {
             method: 'GET',
-            credentials: 'include' // Wichtig für Cookie-Übertragung
+            credentials: 'include', // Wichtig: Sendet Cookies mit jeder Anfrage
+            cache: 'no-cache',      // Verhindert Caching der Auth-Antwort
+            headers: {
+                'Cache-Control': 'no-cache',
+                'X-Requested-With': 'fetch'  // Identifiziert AJAX-Anfragen
+            }
         });
         
-        const data = await response.json();
+        // Prüfen, ob wir eine leere Antwort erhalten haben
+        const responseText = await response.text();
+        if (!responseText || responseText.trim() === '') {
+            console.error('Leere Antwort vom Server erhalten');
+            throw new Error('Leere Serverantwort');
+        }
+        
+        // Antwort parsen - mit Fehlerbehandlung
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Fehler beim Parsen der Serverantwort:', responseText);
+            throw new Error('Ungültiges JSON in Serverantwort');
+        }
+        
         console.log('Session-Status-Antwort:', data);
         
         if (response.ok && data.authenticated) {
             console.log('✅ Session gültig - Benutzer authentifiziert');
             _isAuthenticated = true;
+            
+            // Session-Hinweis im localStorage speichern
+            localStorage.setItem('session_initialized', 'true');
             
             // Wenn auf Login-Seite oder Startseite, weiterleiten zur Karte
             if (window.location.pathname.includes('login.html') || window.location.pathname === '/' || window.location.pathname === '') {
@@ -42,31 +86,52 @@ async function checkAuthStatus(redirectOnFail = true) {
             console.log('❌ Session ungültig - Benutzer nicht authentifiziert');
             _isAuthenticated = false;
             
-            // Nur umleiten, wenn wir nicht auf der Login-Seite sind und Redirect gewünscht ist
+            // Session-Hinweis im localStorage entfernen
+            localStorage.removeItem('session_initialized');
+            
+            // In Produktionsumgebung: Bei ungültiger Session nur umleiten, 
+            // wenn der Nutzer explizit nicht auf der Login-Seite ist
             if (redirectOnFail && !window.location.pathname.includes('login.html')) {
                 console.log('Weiterleitung zur login.html wegen ungültiger Session...');
-                showGlobalMessage('Bitte melde dich an, um fortzufahren.', 'info');
                 
-                // Kleine Verzögerung bei der Umleitung, damit die Nachricht gesehen werden kann
+                // Nur Meldung anzeigen, wenn wir nicht im Redirect-Loop sind
+                // (verhindern, dass mehrere Meldungen angezeigt werden)
+                if (!sessionStorage.getItem('redirecting')) {
+                    showGlobalMessage('Bitte melde dich an, um fortzufahren.', 'info');
+                    sessionStorage.setItem('redirecting', 'true');
+                }
+                
+                // Verzögerung reduziert, um schneller zum Login zu kommen
                 setTimeout(() => {
                     window.location.href = 'login.html';
-                }, 1000);
+                    // Nach Umleitung Flag zurücksetzen
+                    sessionStorage.removeItem('redirecting');
+                }, 500);
             }
             return false;
         }
     } catch (error) {
         console.error('Fehler beim Überprüfen des Auth-Status:', error);
+        
+        // Bei Netzwerkfehlern: Wenn es einen lokalen Hinweis auf eine aktive Session gibt,
+        // geben wir dem Benutzer den Vorteil des Zweifels und lassen ihn auf der Seite
+        if (lastSessionState === 'true') {
+            console.log('⚠️ Netzwerkfehler, aber lokaler Session-Hinweis vorhanden - Temporär authentifiziert');
+            _isAuthenticated = true;
+            showGlobalMessage('Verbindungsfehler beim Prüfen deiner Session. Du kannst die App weiter nutzen, aber einige Funktionen sind möglicherweise eingeschränkt.', 'warning');
+            return true;
+        }
+        
         _isAuthenticated = false;
         
-        // Bei Fehlern zur Login-Seite leiten, aber nur wenn gewünscht und nicht bereits auf Login-Seite
+        // Nur umleiten wenn nicht auf Login-Seite und Redirect erwünscht
         if (redirectOnFail && !window.location.pathname.includes('login.html')) {
             console.log('Weiterleitung zur login.html wegen Netzwerkfehler...');
             showGlobalMessage('Verbindungsfehler. Bitte erneut anmelden.', 'error');
             
-            // Kleine Verzögerung bei der Umleitung
             setTimeout(() => {
                 window.location.href = 'login.html';
-            }, 1000);
+            }, 500);
         }
         return false;
     }
@@ -330,7 +395,9 @@ function showFeedback(element, message, type) {
 
 // Initialisiert die Auth-Komponente
 function initAuth() {
-    console.log('Auth-System wird initialisiert...');
+    console.log('Auth-System wird initialisiert...', new Date().toISOString());
+    console.log('Hostname:', window.location.hostname);
+    console.log('Pfad:', window.location.pathname);
     
     // Login-Formular initialisieren
     initLoginForm();
@@ -341,110 +408,252 @@ function initAuth() {
         logoutBtn.addEventListener('click', logout);
     }
     
-    // Seitenspezifischer Code
-    const isLoginPage = window.location.pathname.includes('login.html');
-    const isMapPage = window.location.pathname.includes('map.html');
+    // Seitenspezifischer Code mit verbesserter Fehlerbehandlung
+    const currentPath = window.location.pathname;
+    const isLoginPage = currentPath.includes('login.html');
+    const isMapPage = currentPath.includes('map.html');
+    const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    
+    console.log(`Seitentyp: ${isLoginPage ? 'Login-Seite' : isMapPage ? 'Map-Seite' : 'Andere Seite'}`);
+    
+    // Anti-Loop-Schutz: Verfolgt die Anzahl der Redirects innerhalb derselben Session
+    let redirectCount = parseInt(sessionStorage.getItem('redirect_count') || '0');
+    
+    // Bei zu vielen Redirects vermuten wir einen Loop und stoppen
+    if (redirectCount > 5) {
+        console.warn('⚠️ Zu viele Redirects erkannt - Loop-Schutz aktiviert');
+        
+        // Redirect-Schutz aktivieren und dem Benutzer Hilfe anbieten
+        const loopProtectionOverlay = document.createElement('div');
+        loopProtectionOverlay.className = 'session-expired-overlay';
+        loopProtectionOverlay.innerHTML = `
+            <div class="session-message-box">
+                <h3>Achtung: Mögliches Login-Problem erkannt</h3>
+                <p>Wir haben einen möglichen Login-Loop erkannt. Dies kann an Cookies oder Browsereinstellungen liegen.</p>
+                <div class="mt-3">
+                    <button id="clear-storage-btn" class="btn btn-warning me-2 mb-2">Browserdaten löschen</button>
+                    <button id="try-login-btn" class="btn btn-primary mb-2">Login erneut versuchen</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(loopProtectionOverlay);
+        
+        // Event-Handler für die Buttons
+        document.getElementById('clear-storage-btn').addEventListener('click', () => {
+            // Alle Speicherdaten löschen
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Cookies löschen (soweit möglich)
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            
+            alert('Browserdaten wurden gelöscht. Die Seite wird neu geladen.');
+            window.location.reload();
+        });
+        
+        document.getElementById('try-login-btn').addEventListener('click', () => {
+            // Reset des Zählers und Weiterleitung zur Login-Seite
+            sessionStorage.removeItem('redirect_count');
+            window.location.href = 'login.html';
+        });
+        
+        // Nicht weitermachen mit den regulären Prüfungen
+        return;
+    }
     
     if (isLoginPage) {
         console.log('Auf Login-Seite - prüfe, ob Benutzer bereits angemeldet ist');
         
-        // Bei Login-Seite: Prüfen, ob Benutzer bereits angemeldet ist
-        // Falls ja, zur Map-Seite weiterleiten
-        fetch(`${API_URL}/api/session-status`, {
-            method: 'GET',
-            credentials: 'include'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.authenticated) {
-                console.log('Benutzer bereits angemeldet - Weiterleitung zur map.html');
-                window.location.href = 'map.html';
-            } else {
-                console.log('Benutzer nicht angemeldet - Login-Formular bleibt aktiv');
-            }
-        })
-        .catch(error => {
-            console.error('Fehler bei der Session-Prüfung auf der Login-Seite:', error);
-        });
+        // Check für Redirect-Loop: Falls wir von der map.html kommen nach einer Authentifizierung,
+        // könnten wir in einem Loop stecken. In diesem Fall setzen wir das localStorage zurück.
+        const referrer = document.referrer;
+        if (referrer && referrer.includes('map.html')) {
+            console.warn('⚠️ Redirect von map.html zur login.html - mögliches Loop-Problem');
+            localStorage.removeItem('session_initialized');
+        }
+        
+        // Verzögerung vor der Session-Prüfung, um dem Server Zeit zu geben
+        setTimeout(() => {
+            // Session-Check verbessert für die Produktionsumgebung
+            fetch(`${API_URL}/api/session-status`, {
+                method: 'GET',
+                credentials: 'include',
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'X-Requested-With': 'fetch'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server antwortete mit ${response.status}`);
+                }
+                return response.text().then(text => {
+                    if (!text) {
+                        throw new Error('Leere Antwort vom Server');
+                    }
+                    return JSON.parse(text);
+                });
+            })
+            .then(data => {
+                if (data.authenticated) {
+                    console.log('Benutzer bereits angemeldet - Weiterleitung zur map.html');
+                    localStorage.setItem('session_initialized', 'true');
+                    
+                    // Redirect-Zähler erhöhen
+                    sessionStorage.setItem('redirect_count', (redirectCount + 1).toString());
+                    
+                    window.location.href = 'map.html';
+                } else {
+                    console.log('Benutzer nicht angemeldet - Login-Formular bleibt aktiv');
+                    localStorage.removeItem('session_initialized');
+                }
+            })
+            .catch(error => {
+                console.error('Fehler bei der Session-Prüfung auf der Login-Seite:', error);
+                
+                // Bei Netzwerkfehlern: Wenn es lokale Anzeichen für eine Session gibt, 
+                // zum Benutzer freundlich sein und zur Map weiterleiten
+                if (localStorage.getItem('session_initialized') === 'true') {
+                    console.log('Lokaler Session-Hinweis gefunden - Versuche Weiterleitung zur Map');
+                    showGlobalMessage('Verbindungsfehler beim Prüfen deiner Session. Versuche zur Karte weiterzuleiten...', 'warning');
+                    
+                    // Redirect-Zähler erhöhen
+                    sessionStorage.setItem('redirect_count', (redirectCount + 1).toString());
+                    
+                    setTimeout(() => {
+                        window.location.href = 'map.html';
+                    }, 1500);
+                }
+            });
+        }, 500);
     } 
     else if (isMapPage) {
         console.log('Auf map.html - führe Session-Validierung durch');
         
-        // Bei Map-Seite: Session überprüfen, aber mit Fehlertoleranz
-        fetch(`${API_URL}/api/session-status`, {
-            method: 'GET',
-            credentials: 'include'
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Session-Prüfung auf map.html:', data);
-            
-            if (data.authenticated) {
-                console.log('✅ Gültige Session auf map.html bestätigt');
-                _isAuthenticated = true;
-                
-                // Regelmäßige Prüfung nur starten, wenn die Session gültig ist
-                // Verhindert mehrfache Intervalle
-                startAuthStatusMonitor(120000);
-            } else {
-                console.log('❌ Ungültige Session auf map.html erkannt');
-                
-                // Freundliche Nachricht mit Button anzeigen, statt automatisch umzuleiten
-                const msgContainer = document.createElement('div');
-                msgContainer.className = 'session-expired-overlay';
-                msgContainer.innerHTML = `
-                    <div class="session-message-box">
-                        <h3>Deine Sitzung ist abgelaufen</h3>
-                        <p>Bitte melde dich erneut an, um auf die Karte zuzugreifen.</p>
-                        <button class="btn btn-primary" id="login-redirect-btn">Zur Anmeldung</button>
-                    </div>
-                `;
-                document.body.appendChild(msgContainer);
-                
-                // Styling für Overlay
-                const style = document.createElement('style');
-                style.textContent = `
-                    .session-expired-overlay {
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background: rgba(0,0,0,0.8);
-                        z-index: 9999;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
+        // Verbesserte Session-Prüfung für Produktionsumgebung
+        const sessionCheckUrl = `${API_URL}/api/session-status`;
+        console.log(`Rufe Session-Check-API auf: ${sessionCheckUrl}`);
+        
+        // Verzögerung vor der Session-Prüfung, um dem Server Zeit zu geben
+        setTimeout(() => {
+            fetch(sessionCheckUrl, {
+                method: 'GET',
+                credentials: 'include',
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'X-Requested-With': 'fetch'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server antwortete mit ${response.status}`);
+                }
+                return response.text().then(text => {
+                    if (!text) {
+                        throw new Error('Leere Antwort vom Server');
                     }
-                    .session-message-box {
-                        background: var(--bs-dark);
-                        border: 1px solid var(--bs-secondary);
-                        padding: 2rem;
-                        border-radius: 0.5rem;
-                        max-width: 90%;
-                        width: 400px;
-                        text-align: center;
-                    }
-                `;
-                document.head.appendChild(style);
-                
-                // Event-Handler für den Button
-                document.getElementById('login-redirect-btn').addEventListener('click', () => {
-                    window.location.href = 'login.html';
+                    return JSON.parse(text);
                 });
-            }
-        })
-        .catch(error => {
-            console.error('Fehler bei der Session-Prüfung:', error);
-            // Bei Netzwerkfehlern keine Umleitung erzwingen
-            _isAuthenticated = false;
-            showGlobalMessage('Verbindungsprobleme bei der Session-Prüfung.', 'warning');
-        });
+            })
+            .then(data => {
+                console.log('Session-Prüfung auf map.html:', data);
+                
+                if (data.authenticated) {
+                    console.log('✅ Gültige Session auf map.html bestätigt');
+                    _isAuthenticated = true;
+                    
+                    // Session-Status im localStorage speichern
+                    localStorage.setItem('session_initialized', 'true');
+                    
+                    // Redirect-Zähler zurücksetzen, da erfolgreicher Zugriff
+                    sessionStorage.removeItem('redirect_count');
+                    
+                    // Regelmäßige Prüfung starten
+                    startAuthStatusMonitor(120000);
+                } else {
+                    console.log('❌ Ungültige Session auf map.html erkannt');
+                    
+                    // Session-Status im localStorage löschen
+                    localStorage.removeItem('session_initialized');
+                    
+                    // Freundliche Nachricht mit Button anzeigen, statt automatisch umzuleiten
+                    const msgContainer = document.createElement('div');
+                    msgContainer.className = 'session-expired-overlay';
+                    msgContainer.innerHTML = `
+                        <div class="session-message-box">
+                            <h3>Deine Sitzung ist abgelaufen</h3>
+                            <p>Bitte melde dich erneut an, um auf die Karte zuzugreifen.</p>
+                            <button class="btn btn-primary" id="login-redirect-btn">Zur Anmeldung</button>
+                        </div>
+                    `;
+                    document.body.appendChild(msgContainer);
+                    
+                    // Styling für Overlay
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        .session-expired-overlay {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.8);
+                            z-index: 9999;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        .session-message-box {
+                            background: var(--bs-dark);
+                            border: 1px solid var(--bs-secondary);
+                            padding: 2rem;
+                            border-radius: 0.5rem;
+                            max-width: 90%;
+                            width: 400px;
+                            text-align: center;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    // Event-Handler für den Button mit Zähler-Update
+                    document.getElementById('login-redirect-btn').addEventListener('click', () => {
+                        // Redirect-Zähler erhöhen
+                        sessionStorage.setItem('redirect_count', (redirectCount + 1).toString());
+                        window.location.href = 'login.html';
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Fehler bei der Session-Prüfung:', error);
+                
+                // Bei Netzwerkfehlern: Wenn es lokale Anzeichen für eine Session gibt,
+                // Benutzer temporär auf der Seite lassen
+                if (localStorage.getItem('session_initialized') === 'true') {
+                    console.log('Lokaler Session-Hinweis gefunden - Temporär authentifiziert');
+                    _isAuthenticated = true;
+                    showGlobalMessage('Verbindungsfehler beim Prüfen deiner Session. Du kannst die App weiter nutzen, aber einige Funktionen sind möglicherweise eingeschränkt.', 'warning');
+                } else {
+                    // Nur Warnung anzeigen, nicht automatisch umleiten
+                    _isAuthenticated = false;
+                    showGlobalMessage('Verbindungsprobleme bei der Session-Prüfung. Falls Funktionen eingeschränkt sind, versuche dich neu anzumelden.', 'warning');
+                }
+            });
+        }, 500);
     }
     else {
-        // Auf anderen Seiten standardmäßig Auth-Status prüfen und Monitor starten
-        checkAuthStatus();
-        startAuthStatusMonitor(120000);
+        // Auf anderen Seiten standardmäßig Auth-Status prüfen
+        checkAuthStatus(false);  // Nicht sofort umleiten
+        
+        // Verzögerung vor dem Start des Monitors
+        setTimeout(() => {
+            if (_isAuthenticated) {
+                startAuthStatusMonitor(120000);
+            }
+        }, 1000);
     }
 }
 
