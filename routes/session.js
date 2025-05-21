@@ -5,9 +5,7 @@ const { validateSession } = require('../auth');
 /**
  * GET /api/session-status
  * Überprüft den aktuellen Session-Status mit erweiterter Funktionalität
- * 1. Prüft zuerst reguläre Cookies
- * 2. Falls kein Cookie, prüft auf Header-basierte Session
- * 3. Gibt die Session-ID in der Antwort zurück, wenn sie gültig ist
+ * OPTIMIERT FÜR RENDER: Fokus auf Header-basierte Authentifizierung statt Cookies
  */
 router.get('/session-status', (req, res) => {
   // Detaillierte Debug-Informationen
@@ -17,15 +15,16 @@ router.get('/session-status', (req, res) => {
   console.log(`[DEBUG] User-Agent: ${req.get('user-agent')}`);
   console.log(`[DEBUG] Headers:`, req.headers);
   
-  // 1. Zuerst Cookie-basierte Session prüfen
-  let sessionId = req.cookies.sessionId;
-  let sessionSource = 'cookie';
+  // PRIORITÄT: X-Session-Id Header (wegen Cookie-Problemen bei Render)
+  // Zuerst prüfen wir den Header, dann erst Cookies als Fallback
+  let sessionId = req.headers['x-session-id'];
+  let sessionSource = 'header';
   
-  // 2. Falls kein Cookie-basierte Session, Header-basierte Session prüfen
-  if (!sessionId && req.headers['x-session-id']) {
-    sessionId = req.headers['x-session-id'];
-    sessionSource = 'header';
-    console.log(`[DEBUG] Session-ID aus Header gefunden`);
+  // Fallback: Falls kein Header, versuchen wir Cookies
+  if (!sessionId && req.cookies.sessionId) {
+    sessionId = req.cookies.sessionId;
+    sessionSource = 'cookie';
+    console.log(`[DEBUG] Fallback: Session-ID aus Cookie gefunden`);
   }
   
   console.log(`[DEBUG] Session-Status-Check für: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine Session'} (Quelle: ${sessionSource})`);
@@ -33,33 +32,9 @@ router.get('/session-status', (req, res) => {
   if (validateSession(sessionId)) {
     console.log(`[DEBUG] ✅ Session gültig`);
     
-    // Session-ID in Cookie erneuern/bestätigen
-    // Bei jeder erfolgreichen Validierung setzen wir den Cookie neu, um das Ablaufdatum zu erneuern
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
-    
-    // Cookie-Optionen optimiert für maximale Kompatibilität
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000
-    };
-    
-    // In lokaler Umgebung anpassen
-    if (host.includes('localhost') || host.includes('127.0.0.1')) {
-      delete cookieOptions.sameSite;
-      cookieOptions.secure = false;
-    }
-    
-    // Cookie erneuern, um Session-Timeout zu verhindern
-    res.cookie('sessionId', sessionId, cookieOptions);
-    console.log(`[DEBUG] Cookie erneuert mit Optionen:`, cookieOptions);
-    
     // Erfolgreiche Antwort mit Session-ID zurückgeben
-    // Dies ermöglicht dem Client, die Session-ID zu speichern und bei Bedarf im Header zu senden
+    // Dies ermöglicht dem Client, die Session-ID zu speichern und im Header zu senden
+    // Wichtig für Kontinuität bei Render-Deployment
     return res.json({
       authenticated: true,
       message: 'Session gültig',

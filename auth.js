@@ -150,27 +150,29 @@ function invalidateSession(sessionId) {
 
 /**
  * Authentication middleware for Express
- * Checks if the request has a valid session
- * Unterstützt mehrere Authentifizierungsmethoden: 
- * - Cookie-basiert (traditionell)
- * - Header-basiert (für Fallback mit localStorage)
- * - Query-Parameter (für spezielle Anwendungsfälle)
+ * OPTIMIERT FÜR RENDER: Priorisiert Header-basierte Authentifizierung
  */
 function requireAuth(req, res, next) {
-  // Session-ID aus mehreren möglichen Quellen extrahieren
-  const sessionId = req.cookies.sessionId || 
-                    req.headers['x-session-id'] || 
+  // PRIORITÄT: X-Session-Id Header (wegen Cookie-Problemen in Render)
+  // Extrahiere Session-ID mit Header als Priorität, Cookie als Fallback
+  const sessionId = req.headers['x-session-id'] || 
+                    req.cookies.sessionId || 
                     req.query.sessionId;
   
   // Detaillierte Debugging-Informationen
-  const source = req.cookies.sessionId ? 'cookie' : 
-               (req.headers['x-session-id'] ? 'header' : 
+  const source = req.headers['x-session-id'] ? 'header' : 
+               (req.cookies.sessionId ? 'cookie' : 
                (req.query.sessionId ? 'query' : 'nicht gefunden'));
   
   console.log(`🔒 Validating session: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine'} (Quelle: ${source})`);
   
   if (validateSession(sessionId)) {
     console.log(`✅ Valid session: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine'}`);
+    
+    // Setze die Session-ID in einen Header der Antwort, um Client zu ermöglichen,
+    // die Session-ID zu erfassen/aktualisieren
+    res.set('X-Confirmed-Session-Id', sessionId);
+    
     return next();
   }
   
