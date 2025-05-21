@@ -1,0 +1,50 @@
+2025-05-21T13:20:18.304037383Z   'sec-ch-ua-platform': '"Windows"',
+2025-05-21T13:20:18.304039563Z   'sec-fetch-dest': 'empty',
+2025-05-21T13:20:18.304042073Z   'sec-fetch-mode': 'cors',
+2025-05-21T13:20:18.304044153Z   'sec-fetch-site': 'same-origin',
+2025-05-21T13:20:18.304046243Z   'true-client-ip': '24.206.112.106',
+2025-05-21T13:20:18.304048363Z   'x-forwarded-for': '185.187.245.33,24.206.112.106, 172.71.151.112, 10.223.121.125',
+2025-05-21T13:20:18.304050523Z   'x-forwarded-proto': 'https',
+2025-05-21T13:20:18.304052654Z   'x-request-start': '1747833618304310',
+2025-05-21T13:20:18.304054743Z   'x-session-id': 'c3f986d40f18ea058cb5ea869a99cf67ded98cb9258024510a2cecec0df4d97f'
+2025-05-21T13:20:18.304056983Z }
+2025-05-21T13:20:18.304059234Z [DEBUG] Session-Status-Check für: c3f986d4... (Quelle: header)
+2025-05-21T13:20:18.304061384Z [DEBUG] ✅ Session gültig
+2025-05-21T13:20:18.715467245Z [2025-05-21T13:20:18.715Z] GET /api/session-status
+2025-05-21T13:20:18.715488496Z 🔒 Validating session: c3f986d4... (Quelle: header)
+2025-05-21T13:20:18.715491126Z ✅ Valid session: c3f986d4...
+2025-05-21T13:20:18.715588068Z [DEBUG] ====== SESSION-STATUS-CHECK ======
+2025-05-21T13:20:18.715592918Z [DEBUG] Zeitstempel: 2025-05-21T13:20:18.715Z
+2025-05-21T13:20:18.715637509Z [DEBUG] Client IP: ::1
+2025-05-21T13:20:18.715643039Z [DEBUG] User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36
+2025-05-21T13:20:18.715721991Z [DEBUG] Headers: {
+2025-05-21T13:20:18.715725491Z   host: 'susio2.onrender.com',
+2025-05-21T13:20:18.715727611Z   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+2025-05-21T13:20:18.715745241Z   accept: '*/*',
+2025-05-21T13:20:18.715747151Z   'accept-encoding': 'gzip, br',
+2025-05-21T13:20:18.715749062Z   'accept-language': 'de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7',
+2025-05-21T13:20:18.715750771Z   'cache-control': 'no-cache',
+2025-05-21T13:20:18.715753031Z   'cdn-loop': 'cloudflare; loops=1',
+2025-05-21T13:20:18.715754702Z   'cf-connecting-ip': '24.206.112.106',
+2025-05-21T13:20:18.715756362Z   'cf-ipcountry': 'DE',
+2025-05-21T13:20:18.715758092Z   'cf-ray': '94345ed47916d282-SEA',
+2025-05-21T13:20:18.715759832Z   'cf-visitor': '{"scheme":"https"}',
+2025-05-21T13:20:18.715762082Z   cookie: 'sessionId=9bb21065050abd58c7cab7d9a252e717cd48f2ede26c4b399067d57909db6cfb',
+2025-05-21T13:20:18.715763792Z   priority: 'u=1, i',
+2025-05-21T13:20:18.715765612Z   referer: 'https://susio2.onrender.com/login.html',
+2025-05-21T13:20:18.715767362Z   'render-proxy-ttl': '4',
+2025-05-21T13:20:18.715769062Z   'rndr-id': '960daf1e-2e85-4baa',
+2025-05-21T13:20:18.715770812Z   'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+2025-05-21T13:20:18.715772522Z   'sec-ch-ua-mobile': '?0',
+2025-05-21T13:20:18.715774272Z   'sec-ch-ua-platform': '"Windows"',
+2025-05-21T13:20:18.715775912Z   'sec-fetch-dest': 'empty',
+2025-05-21T13:20:18.715777592Z   'sec-fetch-mode': 'cors',
+2025-05-21T13:20:18.715779282Z   'sec-fetch-site': 'same-origin',
+2025-05-21T13:20:18.715780942Z   'true-client-ip': '24.206.112.106',
+2025-05-21T13:20:18.715782602Z   'x-forwarded-for': '185.187.245.33,24.206.112.106, 172.71.150.165, 10.223.72.188',
+2025-05-21T13:20:18.715784332Z   'x-forwarded-proto': 'https',
+2025-05-21T13:20:18.715786002Z   'x-request-start': '1747833618717443',
+2025-05-21T13:20:18.715787752Z   'x-session-id': 'c3f986d40f18ea058cb5ea869a99cf67ded98cb9258024510a2cecec0df4d97f'
+2025-05-21T13:20:18.715789452Z }
+2025-05-21T13:20:18.715791472Z [DEBUG] Session-Status-Check für: c3f986d4... (Quelle: header)
+2025-05-21T13:20:18.715793242Z [DEBUG] ✅ Session gültig
