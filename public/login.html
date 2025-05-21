@@ -157,8 +157,14 @@
                         localStorage.setItem('session_initialized', 'true');
                     }
                     
+                    // Mit Session-ID als URL-Parameter weiterleiten
                     setTimeout(() => {
-                        window.location.href = 'map.html';
+                        const sessionId = localStorage.getItem('manual_session_id');
+                        if (sessionId) {
+                            window.location.href = `map.html?sessionId=${sessionId}`;
+                        } else {
+                            window.location.href = 'map.html';
+                        }
                     }, 500);
                 }
             } catch (error) {
@@ -193,9 +199,17 @@
                     // Erfolgsmeldung anzeigen
                     feedback.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
                     
-                    // Kurze Verzögerung, dann weiterleiten
+                    // Kurze Verzögerung, dann mit Session-ID als URL-Parameter weiterleiten
                     setTimeout(() => {
-                        window.location.href = result.redirect || 'map.html';
+                        // Session-ID aus dem lokalen Speicher holen
+                        const sessionId = localStorage.getItem('manual_session_id');
+                        if (sessionId) {
+                            // Mit URL-Parameter weiterleiten (zuverlässige Methode)
+                            window.location.href = `${result.redirect || 'map.html'}?sessionId=${sessionId}`;
+                        } else {
+                            // Fallback auf direkten Link, falls keine Session-ID verfügbar
+                            window.location.href = result.redirect || 'map.html';
+                        }
                     }, 1000);
                 } else {
                     // Fehlermeldung anzeigen
