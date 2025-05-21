@@ -114,10 +114,13 @@ router.post('/verify-access', (req, res) => {
     console.log(`Umgebung: ${isProduction ? 'Produktion' : 'Entwicklung'}, Sichere Verbindung: ${isSecure}`);
     
     // Cookie-Optionen basierend auf der Umgebung
+    // Anmerkung: Bei Render/HTTPS muss secure auf JEDEN FALL true sein, wenn SameSite: 'none' gesetzt ist
+    // SameSite=None erfordert zwingend Secure=true, sonst wird der Cookie sofort verworfen
     const cookieOptions = {
       httpOnly: true,
-      secure: isProduction, // Nur bei HTTPS oder im Produktionsmodus
-      sameSite: isProduction ? 'none' : 'lax', // 'none' für Cross-Site in Produktion, sonst 'lax'
+      secure: true, // Immer secure in Render-Umgebung (muss true sein für SameSite=None)
+      sameSite: 'none', // 'none' ist nötig für Cross-Origin in Produktionsumgebung
+      path: '/', // Wichtig: Expliziter Pfad für bessere Browser-Kompatibilität
       maxAge: 24 * 60 * 60 * 1000 // 24 Stunden
     };
     
@@ -161,8 +164,8 @@ router.post('/logout', (req, res) => {
     
     res.clearCookie('sessionId', {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      secure: true, // Immer secure in Render-Umgebung verwenden
+      sameSite: 'none', // Für Cross-Origin in Produktionsumgebung
       path: '/'
     });
     
