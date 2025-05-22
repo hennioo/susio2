@@ -512,6 +512,29 @@
             font-size: 0.85rem;
         }
         
+        /* Map Click Notification */
+        #map-notification {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(50, 50, 50, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 800;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -10px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        
         /* Mobile Adjustments */
         @media (max-width: 768px) {
             #sidebar {
@@ -567,6 +590,9 @@
     <!-- Map Container -->
     <div id="map-container"></div>
     
+    <!-- Map Click Notification -->
+    <div id="map-notification">Klicke auf die Karte, um einen Standort zu markieren</div>
+    
     <!-- Sidebar -->
     <div id="sidebar">
         <div class="sidebar-header">
@@ -615,14 +641,9 @@
                 <label for="description">Beschreibung:</label>
                 <textarea id="description" rows="3"></textarea>
             </div>
-            <div class="form-group">
-                <label for="latitude">Breitengrad:</label>
-                <input type="number" id="latitude" step="any" required readonly>
-            </div>
-            <div class="form-group">
-                <label for="longitude">Längengrad:</label>
-                <input type="number" id="longitude" step="any" required readonly>
-            </div>
+            <!-- Versteckte Felder für Breiten- und Längengrad -->
+            <input type="hidden" id="latitude" step="any" required>
+            <input type="hidden" id="longitude" step="any" required>
             <div class="form-group">
                 <label for="date">Datum:</label>
                 <input type="date" id="date" required>

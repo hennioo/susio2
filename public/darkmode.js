@@ -217,9 +217,16 @@ function showMap() {
     
     try {
         // Karte mit Deutschland-Zentrum initialisieren
-        map = L.map('map-container').setView([51.1657, 10.4515], 6);
+        map = L.map('map-container', {
+            zoomControl: false // Deaktiviere Standard-Zoom-Controls
+        }).setView([51.1657, 10.4515], 6);
         
         console.log('Karte initialisiert');
+        
+        // Füge Zoom-Controls an die untere linke Ecke hinzu
+        L.control.zoom({
+            position: 'bottomleft'
+        }).addTo(map);
         
         // Dunkles Kartenthema von CartoDB
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -644,6 +651,9 @@ function clearSearch() {
 function toggleAddLocationMode() {
     addLocationMode = !addLocationMode;
     
+    // Hole das Benachrichtigungselement
+    const mapNotification = document.getElementById('map-notification');
+    
     if (addLocationMode) {
         // Aktiviere den Hinzufüge-Modus
         addButton.innerHTML = '<i class="fas fa-times"></i>';
@@ -654,13 +664,29 @@ function toggleAddLocationMode() {
             sidebar.classList.remove('open');
         }
         
-        // Hinweis anzeigen
-        showFormMessage('Klicke auf die Karte, um einen Standort auszuwählen', false);
+        // Benachrichtigung anzeigen
+        mapNotification.style.display = 'block';
+        
+        // Nach 5 Sekunden automatisch ausblenden
+        setTimeout(() => {
+            if (addLocationMode) {
+                mapNotification.style.opacity = '0';
+                setTimeout(() => {
+                    if (addLocationMode) {
+                        mapNotification.style.display = 'none';
+                        mapNotification.style.opacity = '1';
+                    }
+                }, 500);
+            }
+        }, 5000);
     } else {
         // Deaktiviere den Hinzufüge-Modus
         addButton.innerHTML = '<i class="fas fa-plus"></i>';
         map.getContainer().style.cursor = '';
         hideAddLocationForm();
+        
+        // Benachrichtigung ausblenden
+        mapNotification.style.display = 'none';
     }
 }
 
