@@ -413,11 +413,8 @@ function displayLocationsOnMap(locations) {
                 if (!isNaN(lat) && !isNaN(lng)) {
                     console.log(`Füge Marker hinzu für: ${location.title} an [${lat}, ${lng}]`);
                     try {
-                        // Erstelle ein benutzerdefiniertes Marker-Icon mit Vorschaubild
-                        const customIcon = createCustomMarkerIcon(location);
-                        
-                        // Marker mit Klick-Ereignis für das Detailfenster und benutzerdefiniertem Icon
-                        const marker = L.marker([lat, lng], { icon: customIcon })
+                        // Marker mit Klick-Ereignis für das Detailfenster
+                        const marker = L.marker([lat, lng])
                             .addTo(map)
                             .on('click', () => {
                                 console.log(`Marker für ${location.title} wurde angeklickt`);
@@ -867,53 +864,4 @@ function formatDate(dateString) {
         console.error('Fehler beim Formatieren des Datums:', error);
         return dateString; // Originaldatum zurückgeben im Fehlerfall
     }
-}
-
-/**
- * Erstellt ein benutzerdefiniertes Marker-Icon mit Thumbnail-Bild
- * @param {Object} location - Das Standort-Objekt mit Bildinformationen
- * @returns {L.DivIcon} - Das angepasste Icon für den Marker
- */
-function createCustomMarkerIcon(location) {
-    // HTML-Element für das Icon erstellen
-    const iconHtml = document.createElement('div');
-    iconHtml.className = 'custom-marker-icon';
-    
-    // Prüfen, ob ein Bild vorhanden ist
-    if (location.has_image) {
-        // Ein Img-Element erstellen und das Thumbnail laden
-        const img = document.createElement('img');
-        img.className = 'marker-thumbnail';
-        img.src = `/api/locations/${location.id}/image?thumb=true&t=${new Date().getTime()}`; // Cache-Busting
-        img.alt = location.title;
-        img.onerror = function() {
-            // Bei Fehler durch Fallback ersetzen
-            this.replaceWith(createFallbackMarker(location));
-        };
-        iconHtml.appendChild(img);
-    } else {
-        // Fallback für Standorte ohne Bild
-        iconHtml.appendChild(createFallbackMarker(location));
-    }
-    
-    // DivIcon für Leaflet erstellen
-    return L.divIcon({
-        html: iconHtml,
-        className: '', // leerer Klassenname, um Standard-Styling zu vermeiden
-        iconSize: [40, 40],
-        iconAnchor: [20, 20] // Mittelpunkt des Icons
-    });
-}
-
-/**
- * Erstellt ein Fallback für Marker ohne Bild
- * @param {Object} location - Das Standort-Objekt
- * @returns {HTMLElement} - Das Fallback-Element
- */
-function createFallbackMarker(location) {
-    const fallback = document.createElement('div');
-    fallback.className = 'marker-no-image';
-    // Erste beiden Buchstaben des Titels oder ein Icon-Symbol
-    fallback.textContent = location.title ? location.title.substring(0, 2).toUpperCase() : '📍';
-    return fallback;
 }
