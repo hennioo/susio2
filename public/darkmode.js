@@ -6,21 +6,25 @@ async function checkApiConnection() {
     const connectionStatus = document.getElementById('connection-status');
     
     try {
+        console.log('Prüfe API-Verbindung...');
         const response = await fetch('/api-info', {
             method: 'GET',
             // Kein credentials: 'include' bei dieser Prüfung nötig
         });
         
         if (response.ok) {
+            console.log('API-Verbindung hergestellt');
             connectionStatus.textContent = 'Verbindung zum Server hergestellt ✓';
             connectionStatus.className = 'connection-status success';
             return true;
         } else {
+            console.error('API-Verbindungsproblem: Status', response.status);
             connectionStatus.textContent = 'Verbindungsproblem: Server antwortet, aber mit Status ' + response.status;
             connectionStatus.className = 'connection-status error';
             return false;
         }
     } catch (error) {
+        console.error('API-Verbindungsproblem:', error);
         connectionStatus.textContent = 'Verbindungsproblem: ' + error.message;
         connectionStatus.className = 'connection-status error';
         return false;
@@ -198,24 +202,47 @@ async function handleLogout() {
 
 // Karte anzeigen
 function showMap() {
-    map = L.map('map-container').setView([51.1657, 10.4515], 6); // Deutschland Zentrum
+    console.log('Initialisiere Karte...');
     
-    // Dunkles Kartenthema von CartoDB
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19
-    }).addTo(map);
+    if (map) {
+        console.log('Karte existiert bereits, wird entfernt');
+        map.remove();
+    }
     
-    // Click-Event für Ort hinzufügen
-    map.on('click', (e) => {
-        if (addLocationMode) {
-            selectedLocationCoordinates = e.latlng;
-            latitudeInput.value = e.latlng.lat.toFixed(6);
-            longitudeInput.value = e.latlng.lng.toFixed(6);
-            showAddLocationForm();
-        }
-    });
+    try {
+        // Karte mit Deutschland-Zentrum initialisieren
+        map = L.map('map-container').setView([51.1657, 10.4515], 6);
+        
+        console.log('Karte initialisiert');
+        
+        // Dunkles Kartenthema von CartoDB
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+        
+        console.log('Karten-Tiles hinzugefügt');
+        
+        // Click-Event für Ort hinzufügen
+        map.on('click', (e) => {
+            console.log('Kartenklick bei:', e.latlng);
+            if (addLocationMode) {
+                selectedLocationCoordinates = e.latlng;
+                latitudeInput.value = e.latlng.lat.toFixed(6);
+                longitudeInput.value = e.latlng.lng.toFixed(6);
+                showAddLocationForm();
+            }
+        });
+        
+        // Verzögerung hinzufügen, um sicherzustellen, dass die Karte korrekt gerendert wird
+        setTimeout(() => {
+            console.log('Karte neu berechnen...');
+            map.invalidateSize();
+        }, 100);
+    } catch (error) {
+        console.error('Fehler beim Initialisieren der Karte:', error);
+    }
 }
 
 // Standorte vom Backend abrufen
@@ -287,44 +314,75 @@ async function fetchStats() {
 
 // Standorte auf der Karte darstellen
 function displayLocationsOnMap(locations) {
-    // Bestehende Marker entfernen
-    markers.forEach(marker => {
-        map.removeLayer(marker);
-    });
-    markers = [];
+    console.log('Zeige Standorte auf Karte an, Anzahl:', locations ? locations.length : 0);
     
-    // Benutzerdefiniertes Marker-Icon
-    const customIcon = L.icon({
-        iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
+    if (!map) {
+        console.error('Karte wurde noch nicht initialisiert!');
+        return;
+    }
     
-    console.log('Verarbeite Standorte für Karte:', locations);
-    
-    // Neue Marker hinzufügen
-    if (Array.isArray(locations)) {
-        locations.forEach(location => {
-            // Prüfen ob die Standortdaten numerische Koordinaten enthalten
-            const lat = parseFloat(location.latitude);
-            const lng = parseFloat(location.longitude);
-            
-            if (!isNaN(lat) && !isNaN(lng)) {
-                console.log(`Füge Marker hinzu für: ${location.title} an [${lat}, ${lng}]`);
-                const marker = L.marker([lat, lng], { icon: customIcon })
-                    .addTo(map)
-                    .on('click', () => showLocationDetails(location));
-                
-                markers.push(marker);
-            } else {
-                console.warn(`Ungültige Koordinaten für Standort: ${location.title}, lat: ${location.latitude}, lng: ${location.longitude}`);
-            }
+    try {
+        // Bestehende Marker entfernen
+        markers.forEach(marker => {
+            map.removeLayer(marker);
         });
-    } else {
-        console.error('Erhaltene Standorte sind kein Array:', locations);
+        markers = [];
+        
+        // Benutzerdefiniertes Marker-Icon
+        const customIcon = L.icon({
+            iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-orange.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        
+        console.log('Verarbeite Standorte für Karte:', locations);
+        
+        // Neue Marker hinzufügen
+        if (Array.isArray(locations)) {
+            locations.forEach(location => {
+                // Prüfen ob die Standortdaten numerische Koordinaten enthalten
+                const lat = parseFloat(location.latitude);
+                const lng = parseFloat(location.longitude);
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    console.log(`Füge Marker hinzu für: ${location.title} an [${lat}, ${lng}]`);
+                    try {
+                        const marker = L.marker([lat, lng], { icon: customIcon })
+                            .addTo(map)
+                            .on('click', () => showLocationDetails(location));
+                        
+                        // Tooltip mit dem Titel hinzufügen
+                        marker.bindTooltip(location.title);
+                        
+                        markers.push(marker);
+                    } catch (error) {
+                        console.error(`Fehler beim Hinzufügen des Markers für ${location.title}:`, error);
+                    }
+                } else {
+                    console.warn(`Ungültige Koordinaten für Standort: ${location.title}, lat: ${location.latitude}, lng: ${location.longitude}`);
+                }
+            });
+            
+            // Karte auf alle Marker zentrieren, wenn vorhanden
+            if (markers.length > 0) {
+                setTimeout(() => {
+                    try {
+                        const group = new L.featureGroup(markers);
+                        map.fitBounds(group.getBounds().pad(0.1));
+                        console.log('Karte auf alle Marker zentriert');
+                    } catch (error) {
+                        console.error('Fehler beim Zentrieren der Karte auf Marker:', error);
+                    }
+                }, 200);
+            }
+        } else {
+            console.error('Erhaltene Standorte sind kein Array:', locations);
+        }
+    } catch (error) {
+        console.error('Fehler beim Anzeigen der Standorte auf der Karte:', error);
     }
 }
 
