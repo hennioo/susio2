@@ -96,6 +96,12 @@ document.addEventListener('DOMContentLoaded', () => {
         closeLocationPopup();
     });
     
+    // Löschen-Button-Event-Listener
+    const deleteButton = document.getElementById('delete-location-button');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', handleDeleteLocation);
+    }
+    
     // Authentifizierungsstatus prüfen
     checkAuthStatus();
 });
@@ -374,9 +380,16 @@ function displayLocationsOnMap(locations) {
                 if (!isNaN(lat) && !isNaN(lng)) {
                     console.log(`Füge Marker hinzu für: ${location.title} an [${lat}, ${lng}]`);
                     try {
+                        // Marker mit Klick-Ereignis für das Detailfenster
                         const marker = L.marker([lat, lng])
                             .addTo(map)
-                            .bindPopup(`<b>${location.title}</b><br>${location.description || 'Keine Beschreibung'}`);
+                            .on('click', () => {
+                                console.log(`Marker für ${location.title} wurde angeklickt`);
+                                showLocationDetails(location);
+                            });
+                        
+                        // Tooltip für bessere Benutzererfahrung
+                        marker.bindTooltip(location.title);
                         
                         markers.push(marker);
                         console.log(`Marker für ${location.title} erfolgreich hinzugefügt`);
@@ -489,6 +502,9 @@ function showLocationDetails(location) {
     
     console.log('Zeige Details für Standort:', location);
     
+    // Speichere die aktuelle Standort-ID für den Löschbutton
+    locationPopup.dataset.locationId = location.id;
+    
     // Popup füllen
     popupTitle.textContent = location.title || 'Unbenannter Standort';
     popupDescription.textContent = location.description || 'Keine Beschreibung vorhanden';
@@ -533,6 +549,51 @@ function closeLocationPopup() {
     locationPopup.style.display = 'none';
 }
 
+// Löschen eines Standorts
+async function handleDeleteLocation() {
+    const locationId = locationPopup.dataset.locationId;
+    
+    if (!locationId) {
+        console.error('Keine Standort-ID gefunden');
+        return;
+    }
+    
+    // Bestätigung vom Benutzer einholen
+    if (!confirm('Bist du sicher, dass du diesen Standort löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+        return;
+    }
+    
+    try {
+        console.log(`Lösche Standort mit ID: ${locationId}`);
+        
+        const response = await fetch(`/api/locations/${locationId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Fehler beim Löschen des Standorts: ${response.status}`);
+        }
+        
+        // Standort wurde erfolgreich gelöscht
+        console.log('Standort erfolgreich gelöscht');
+        
+        // Popup schließen
+        closeLocationPopup();
+        
+        // Standorte neu laden
+        fetchLocations();
+        fetchStats();
+        
+        // Feedback anzeigen
+        alert('Standort wurde erfolgreich gelöscht.');
+        
+    } catch (error) {
+        console.error('Fehler beim Löschen des Standorts:', error);
+        alert(`Fehler beim Löschen: ${error.message}`);
+    }
+}
+
 // Toggle Sidebar
 function toggleSidebar() {
     sidebar.classList.toggle('open');
@@ -567,9 +628,19 @@ function toggleAddLocationMode() {
     addLocationMode = !addLocationMode;
     
     if (addLocationMode) {
+        // Aktiviere den Hinzufüge-Modus
         addButton.innerHTML = '<i class="fas fa-times"></i>';
         map.getContainer().style.cursor = 'crosshair';
+        
+        // Sidebar schließen, wenn geöffnet
+        if (sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+        }
+        
+        // Hinweis anzeigen
+        showFormMessage('Klicke auf die Karte, um einen Standort auszuwählen', false);
     } else {
+        // Deaktiviere den Hinzufüge-Modus
         addButton.innerHTML = '<i class="fas fa-plus"></i>';
         map.getContainer().style.cursor = '';
         hideAddLocationForm();

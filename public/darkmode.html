@@ -441,6 +441,31 @@
         .popup-date {
             color: var(--text-secondary);
             font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+        
+        .popup-actions {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        
+        .delete-button:hover {
+            background-color: #bd2130;
         }
         
         .popup-close {
@@ -616,6 +641,12 @@
             <h3 class="popup-title" id="popup-title">Standort Titel</h3>
             <p class="popup-description" id="popup-description">Beschreibung des Standorts</p>
             <p class="popup-date" id="popup-date">Datum: 01.01.2023</p>
+            
+            <div class="popup-actions">
+                <button type="button" id="delete-location-button" class="delete-button">
+                    <i class="fas fa-trash-alt"></i> Standort löschen
+                </button>
+            </div>
         </div>
     </div>
     
