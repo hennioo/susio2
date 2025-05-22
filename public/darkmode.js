@@ -262,20 +262,32 @@ async function fetchLocations() {
             throw new Error('Standorte konnten nicht abgerufen werden');
         }
         
-        const data = await response.json();
-        console.log('Erhaltene Standorte:', data);
+        const responseData = await response.json();
+        console.log('Erhaltene Standorte:', responseData);
         
-        if (Array.isArray(data)) {
-            allLocations = data;
-            
-            // Marker auf der Karte platzieren
-            displayLocationsOnMap(allLocations);
-            
-            // Standorte in der Sidebar anzeigen
-            displayLocationsInSidebar(allLocations);
+        // Korrektur für das Antwortformat von der API
+        // Die API gibt {error: false, data: Array(3)} zurück
+        let locationsArray;
+        
+        if (responseData && responseData.data && Array.isArray(responseData.data)) {
+            console.log('Standorte-Array gefunden in responseData.data');
+            locationsArray = responseData.data;
+        } else if (Array.isArray(responseData)) {
+            console.log('responseData ist direkt ein Array');
+            locationsArray = responseData;
         } else {
-            console.error('Unerwartetes Datenformat für Standorte:', data);
+            console.error('Unerwartetes Datenformat für Standorte:', responseData);
+            locationsArray = [];
         }
+        
+        console.log('Verarbeitete Standorte:', locationsArray);
+        allLocations = locationsArray;
+        
+        // Marker auf der Karte platzieren
+        displayLocationsOnMap(allLocations);
+        
+        // Standorte in der Sidebar anzeigen
+        displayLocationsInSidebar(allLocations);
     } catch (error) {
         console.error('Fehler beim Abrufen der Standorte:', error);
     }
@@ -422,20 +434,26 @@ function displayLocationsOnMap(locations) {
 
 // Standorte in der Sidebar anzeigen
 function displayLocationsInSidebar(locations) {
+    console.log('=== DEBUG: displayLocationsInSidebar ===');
+    console.log('Erhaltene Standorte für Sidebar:', locations);
+    
     locationsListContainer.innerHTML = '';
     
     if (!Array.isArray(locations) || locations.length === 0) {
+        console.log('Keine Standorte zum Anzeigen gefunden');
         locationsListContainer.innerHTML = '<div class="no-locations">Keine Standorte gefunden</div>';
         return;
     }
     
-    console.log('Zeige Standorte in Sidebar an:', locations);
+    console.log(`Zeige ${locations.length} Standorte in Sidebar an`);
     
     locations.forEach(location => {
         if (!location || typeof location !== 'object') {
             console.warn('Ungültiges Standortobjekt:', location);
             return;
         }
+        
+        console.log('Verarbeite Standort für Sidebar:', location);
         
         const locationItem = document.createElement('div');
         locationItem.className = 'location-item';
@@ -458,6 +476,7 @@ function displayLocationsInSidebar(locations) {
         `;
         
         locationsListContainer.appendChild(locationItem);
+        console.log(`Standort "${title}" zur Sidebar hinzugefügt`);
     });
 }
 
