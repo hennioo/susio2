@@ -75,8 +75,8 @@ function isExtensionMatchingMimeType(filename, mimeType) {
  */
 async function processImage(imageBuffer, mimeType) {
   try {
-    // Initialize the sharp instance with the input buffer
-    let imageProcessor = sharp(imageBuffer);
+    // Initialize the sharp instance with the input buffer and auto-rotate based on EXIF orientation
+    let imageProcessor = sharp(imageBuffer).rotate();
     
     // Get image metadata to determine if resizing is needed
     const metadata = await imageProcessor.metadata();
@@ -113,8 +113,9 @@ async function processImage(imageBuffer, mimeType) {
         processedImageBuffer = await imageProcessor.toBuffer();
     }
     
-    // Create thumbnail
+    // Create thumbnail - maintaining proper orientation
     const thumbnailBuffer = await sharp(processedImageBuffer)
+      .rotate() // Ebenfalls EXIF-Orientierung für das Thumbnail beibehalten
       .resize(THUMB_SIZE, THUMB_SIZE, {
         fit: 'cover',
         position: 'center'
