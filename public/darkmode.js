@@ -314,50 +314,60 @@ async function fetchStats() {
 
 // Standorte auf der Karte darstellen
 function displayLocationsOnMap(locations) {
+    console.log('==== MARKER DEBUG ====');
     console.log('Zeige Standorte auf Karte an, Anzahl:', locations ? locations.length : 0);
     
     if (!map) {
-        console.error('Karte wurde noch nicht initialisiert!');
+        console.error('Karte wurde noch nicht initialisiert! Initialisiere sie jetzt...');
+        showMap();
+        // Nach der Initialisierung erneut aufrufen
+        setTimeout(() => displayLocationsOnMap(locations), 500);
         return;
     }
     
     try {
         // Bestehende Marker entfernen
-        markers.forEach(marker => {
-            map.removeLayer(marker);
-        });
+        if (markers && markers.length) {
+            console.log(`Entferne ${markers.length} bestehende Marker`);
+            markers.forEach(marker => {
+                try {
+                    map.removeLayer(marker);
+                } catch (e) {
+                    console.warn('Fehler beim Entfernen des Markers:', e);
+                }
+            });
+        }
         markers = [];
         
-        // Benutzerdefiniertes Marker-Icon
-        const customIcon = L.icon({
-            iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-orange.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
-        });
-        
+        // Standard-Icon verwenden (ohne angepasstes Icon, um Fehlerquellen zu reduzieren)
         console.log('Verarbeite Standorte für Karte:', locations);
         
         // Neue Marker hinzufügen
         if (Array.isArray(locations)) {
+            // Testmarker für Berlin hinzufügen, um zu sehen ob grundsätzlich Marker funktionieren
+            console.log('Füge Test-Marker für Berlin hinzu');
+            const berlinMarker = L.marker([52.5200, 13.4050])
+                .addTo(map)
+                .bindPopup('Test-Marker für Berlin');
+            markers.push(berlinMarker);
+            
+            // Echte Standorte hinzufügen
             locations.forEach(location => {
                 // Prüfen ob die Standortdaten numerische Koordinaten enthalten
                 const lat = parseFloat(location.latitude);
                 const lng = parseFloat(location.longitude);
                 
+                console.log(`Verarbeite Standort: ${location.title}, Koordinaten: [${lat}, ${lng}]`);
+                
                 if (!isNaN(lat) && !isNaN(lng)) {
                     console.log(`Füge Marker hinzu für: ${location.title} an [${lat}, ${lng}]`);
                     try {
-                        const marker = L.marker([lat, lng], { icon: customIcon })
+                        const marker = L.marker([lat, lng])
                             .addTo(map)
-                            .on('click', () => showLocationDetails(location));
-                        
-                        // Tooltip mit dem Titel hinzufügen
-                        marker.bindTooltip(location.title);
+                            .bindPopup(`<b>${location.title}</b><br>${location.description || 'Keine Beschreibung'}`);
                         
                         markers.push(marker);
+                        console.log(`Marker für ${location.title} erfolgreich hinzugefügt`);
                     } catch (error) {
                         console.error(`Fehler beim Hinzufügen des Markers für ${location.title}:`, error);
                     }
@@ -366,23 +376,47 @@ function displayLocationsOnMap(locations) {
                 }
             });
             
-            // Karte auf alle Marker zentrieren, wenn vorhanden
-            if (markers.length > 0) {
+            // Karte auf Deutschland zentrieren, falls keine Marker vorhanden sind
+            if (markers.length <= 1) { // Nur der Test-Marker
+                console.log('Keine echten Standorte gefunden, zentriere auf Deutschland');
+                map.setView([51.1657, 10.4515], 6);
+            } else {
+                // Verzögerung für die Zentrierung der Marker
                 setTimeout(() => {
                     try {
+                        console.log(`Zentriere Karte auf ${markers.length} Marker`);
                         const group = new L.featureGroup(markers);
                         map.fitBounds(group.getBounds().pad(0.1));
                         console.log('Karte auf alle Marker zentriert');
                     } catch (error) {
                         console.error('Fehler beim Zentrieren der Karte auf Marker:', error);
+                        // Fallback: Auf Deutschland zentrieren
+                        map.setView([51.1657, 10.4515], 6);
                     }
-                }, 200);
+                }, 500);
             }
         } else {
             console.error('Erhaltene Standorte sind kein Array:', locations);
+            // Testmarker hinzufügen, wenn keine Standorte vorhanden sind
+            const testMarker = L.marker([51.1657, 10.4515])
+                .addTo(map)
+                .bindPopup('Test-Marker für Deutschland');
+            markers.push(testMarker);
         }
+        
+        // Karte neu zeichnen
+        map.invalidateSize();
+        console.log('Karte neu gezeichnet');
+        
     } catch (error) {
         console.error('Fehler beim Anzeigen der Standorte auf der Karte:', error);
+        // Notfall-Fallback: Versuch, einen einfachen Marker hinzuzufügen
+        try {
+            L.marker([51.1657, 10.4515]).addTo(map).bindPopup('Notfall-Marker');
+            console.log('Notfall-Marker hinzugefügt');
+        } catch (e) {
+            console.error('Auch der Notfall-Marker konnte nicht hinzugefügt werden:', e);
+        }
     }
 }
 

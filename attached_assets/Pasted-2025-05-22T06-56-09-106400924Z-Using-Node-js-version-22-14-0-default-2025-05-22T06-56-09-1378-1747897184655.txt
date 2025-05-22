@@ -1,0 +1,50 @@
+2025-05-22T06:56:09.106400924Z ==> Using Node.js version 22.14.0 (default)
+2025-05-22T06:56:09.137866101Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2025-05-22T06:56:09.223214739Z ==> Using Bun version 1.1.0 (default)
+2025-05-22T06:56:09.223232111Z ==> Docs on specifying a bun version: https://render.com/docs/bun-version
+2025-05-22T06:56:10.035520797Z 
+2025-05-22T06:56:10.035547979Z up to date, audited 132 packages in 692ms
+2025-05-22T06:56:10.035557799Z 
+2025-05-22T06:56:10.03556076Z 23 packages are looking for funding
+2025-05-22T06:56:10.035596792Z   run `npm fund` for details
+2025-05-22T06:56:10.03679204Z 
+2025-05-22T06:56:10.03680054Z found 0 vulnerabilities
+2025-05-22T06:56:15.125556186Z ==> Uploading build...
+2025-05-22T06:56:21.464930189Z ==> Uploaded in 5.0s. Compression took 1.3s
+2025-05-22T06:56:21.497269881Z ==> Build successful 🎉
+2025-05-22T06:56:27.425552141Z ==> Deploying...
+2025-05-22T06:57:30.592709935Z ==> No open ports detected, continuing to scan...
+2025-05-22T06:57:30.693638573Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2025-05-22T06:57:34.319542928Z ==> Running 'node server.js'
+2025-05-22T06:57:35.722597063Z Starting Phase 1 Test: Database Communication
+2025-05-22T06:57:36.294322781Z Initializing database...
+2025-05-22T06:57:37.826449284Z ✅ Database connection successful
+2025-05-22T06:57:37.827006726Z Checking if locations table exists...
+2025-05-22T06:57:37.975922096Z ✅ locations table already exists
+2025-05-22T06:57:37.98637447Z Checking if couple_image table exists...
+2025-05-22T06:57:38.121563714Z ✅ couple_image table already exists
+2025-05-22T06:57:38.12184208Z ✅ Database initialization completed successfully
+2025-05-22T06:57:38.147624555Z ✅ Server running on port 10000
+2025-05-22T06:57:38.147731847Z 📝 API documentation available at http://localhost:10000/
+2025-05-22T06:57:38.147739618Z 🔐 Login page available at http://localhost:10000/login
+2025-05-22T06:57:48.142967Z ==> Your service is live 🎉
+2025-05-22T06:57:57.963998138Z [2025-05-22T06:57:57.963Z] GET /api-info
+2025-05-22T06:57:58.020801484Z [2025-05-22T06:57:58.020Z] GET /api/locations
+2025-05-22T06:57:58.021585582Z 🔒 Validating session: 3b3d985a2f881df796a9bafceab3399d6913d7afa34fd97b1daae14b86072afa
+2025-05-22T06:57:58.021728965Z ❌ Invalid session: 3b3d985a2f881df796a9bafceab3399d6913d7afa34fd97b1daae14b86072afa
+2025-05-22T06:57:59.85552129Z [2025-05-22T06:57:59.854Z] POST /verify-access
+2025-05-22T06:57:59.855543481Z Verifying access code
+2025-05-22T06:57:59.861311109Z ✅ New session created: bbefc6c15776f44eb5599caffa58ac2b128bc34d916a587be06a32c995a53ef4
+2025-05-22T06:57:59.86132747Z ✅ Access code verified successfully
+2025-05-22T06:58:00.093615948Z [2025-05-22T06:58:00.092Z] GET /api/stats
+2025-05-22T06:58:00.093634739Z 🔒 Validating session: bbefc6c15776f44eb5599caffa58ac2b128bc34d916a587be06a32c995a53ef4
+2025-05-22T06:58:00.093639549Z ✅ Valid session: bbefc6c15776f44eb5599caffa58ac2b128bc34d916a587be06a32c995a53ef4
+2025-05-22T06:58:00.093643779Z 🔒 Validating session: bbefc6c15776f44eb5599caffa58ac2b128bc34d916a587be06a32c995a53ef4
+2025-05-22T06:58:00.093647729Z ✅ Valid session: bbefc6c15776f44eb5599caffa58ac2b128bc34d916a587be06a32c995a53ef4
+2025-05-22T06:58:00.093652389Z 📊 Fetching statistics
+2025-05-22T06:58:00.114564905Z [2025-05-22T06:58:00.114Z] GET /api/locations
+2025-05-22T06:58:00.114981775Z 🔒 Validating session: bbefc6c15776f44eb5599caffa58ac2b128bc34d916a587be06a32c995a53ef4
+2025-05-22T06:58:00.115569888Z ✅ Valid session: bbefc6c15776f44eb5599caffa58ac2b128bc34d916a587be06a32c995a53ef4
+2025-05-22T06:58:00.115581948Z 📊 Fetching all locations
+2025-05-22T06:58:01.532509709Z ✅ Statistics fetched successfully: 3 locations, 3 images, DB size: 16 MB
+2025-05-22T06:58:05.2011287Z ✅ Found 3 locations
