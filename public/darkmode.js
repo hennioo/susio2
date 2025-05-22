@@ -413,8 +413,11 @@ function displayLocationsOnMap(locations) {
                 if (!isNaN(lat) && !isNaN(lng)) {
                     console.log(`Füge Marker hinzu für: ${location.title} an [${lat}, ${lng}]`);
                     try {
-                        // Marker mit Klick-Ereignis für das Detailfenster
-                        const marker = L.marker([lat, lng])
+                        // Erstelle ein benutzerdefiniertes Marker-Icon mit Vorschaubild
+                        const customIcon = createCustomMarkerIcon(location);
+                        
+                        // Marker mit Klick-Ereignis für das Detailfenster und benutzerdefiniertem Icon
+                        const marker = L.marker([lat, lng], { icon: customIcon })
                             .addTo(map)
                             .on('click', () => {
                                 console.log(`Marker für ${location.title} wurde angeklickt`);
