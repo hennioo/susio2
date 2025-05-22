@@ -775,7 +775,10 @@ async function createLocation(event) {
         // Bild hochladen, falls vorhanden
         const imageFile = document.getElementById('image').files[0];
         if (imageFile) {
-            await uploadImage(data.id, imageFile);
+            // Korrektur: Zugriff auf die ID im korrekten Format der Serverantwort
+            const locationId = data.data ? data.data.id : data.id;
+            console.log('Hochladen von Bild für Standort ID:', locationId);
+            await uploadImage(locationId, imageFile);
         }
         
         // UI zurücksetzen
