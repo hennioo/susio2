@@ -126,13 +126,13 @@
             top: 0;
             left: 0;
             right: 0;
-            background-color: rgba(18, 18, 18, 0.9);
+            background-color: transparent;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0.75rem 1rem;
             z-index: 100;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            box-shadow: none;
         }
         
         .profile-image {
@@ -142,10 +142,8 @@
             object-fit: cover;
         }
         
-        .header-logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary-color);
+        .header-spacer {
+            flex: 1;
         }
         
         .header-actions {
@@ -164,8 +162,18 @@
             transition: background-color 0.3s;
         }
         
+        .circle-button {
+            background-color: rgba(50, 50, 50, 0.7);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+        }
+        
         .header-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(80, 80, 80, 0.8);
         }
         
         /* Map Container */
@@ -545,12 +553,12 @@
     <!-- Header -->
     <header>
         <img src="/couple-profile.svg" alt="Profilbild" class="profile-image" id="profile-image">
-        <div class="header-logo">susio</div>
+        <div class="header-spacer"></div>
         <div class="header-actions">
-            <button id="add-button" class="header-button">
+            <button id="add-button" class="header-button circle-button">
                 <i class="fas fa-plus"></i>
             </button>
-            <button id="menu-button" class="header-button">
+            <button id="menu-button" class="header-button circle-button">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
