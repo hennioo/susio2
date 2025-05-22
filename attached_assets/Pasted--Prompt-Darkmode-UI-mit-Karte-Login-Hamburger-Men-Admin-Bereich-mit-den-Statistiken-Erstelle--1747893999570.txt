@@ -1,0 +1,77 @@
+✅ Prompt: Darkmode UI mit Karte, Login, Hamburger-Menü, Admin-Bereich mit den Statistiken
+Erstelle mir ein vollständiges Frontend im Darkmode für eine Web-App namens „susio“, das folgende Anforderungen erfüllt. Das Frontend soll das bisherige Frontend ersetzen. Die App besteht aus einer Login-Seite und einer Hauptansicht mit interaktiver Karte nach erfolgreichem Login. Achte hier insbesondere auf die Login Funktionalität und dass hier die Weiterleitung richtig funktioniert. Kannst du alles über eine Seite ohne Unterseiten lösen? An sich ist es nur eine UI erweiterung des aktuell funktionierenden Übergangs um die Karte um die standorte besser darzustellen.
+
+1. Login-Seite
+Login-Formular im Dark Mode.
+
+Ein Eingabefeld für den Zugangscode.
+
+Ein Login-Button.
+
+Nach erfolgreichem Login: Weiterleitung zur Hauptansicht, der Karte.
+
+Zugriffsschutz: Die Karte darf nicht ohne vorherigen Login erreichbar sein (Session-basiert oder via Protected Route).
+
+2. Hauptseite – Map-Ansicht
+Vollbildkarte im Hintergrund (Leaflet oder vergleichbar).
+
+Die Karte soll die gesamte Seite füllen, andere UI-Elemente sollen darüber schweben.
+
+Alle gespeicherten Orte werden mit orangenen Pins dargestellt.
+
+Klickt man auf einen Pin oder einen Ort in der Liste:
+
+Öffnet sich ein kleines Info-Fenster über der Karte (mit Titel, Thumbnail, ggf. Beschreibung). Das soll genauso wie bisher funktionieren nur in das neue Frontend integriert und angepasst werden.
+
+Dieses Fenster kann wieder geschlossen werden.
+
+Oben fixierter Header:
+Links: Kleines Pärchenbild (Profilbild).
+
+Mitte: Logo mit Text „susio“, mittig und stilvoll.
+
+Rechts:
+
+Plus-Symbol zum Hinzufügen eines neuen Orts.
+
+Direkt daneben ein Hamburger-Menü-Symbol zum Öffnen des Menüs.
+
+3. Ort hinzufügen
+Klick auf das Plus-Symbol aktiviert den Ort-Hinzufügen-Modus:
+
+Symbol ändert sich zu X, um den Modus wieder zu beenden.
+
+Benutzer klickt auf einen Ort auf der Karte, um einen Ort hinzuzufügen.
+
+Danach: Ein Overlay-Formular erscheint mit folgenden Feldern:
+
+Titel
+
+Beschreibung
+
+Datum (automatisch vorausgefüllt mit aktuellem Datum)
+
+Bild-Upload
+
+Speichern-Button
+
+4. Hamburger-Menü
+Öffnet sich von rechts als überlagerndes Slide-in-Panel, schwebend über der Karte.
+
+Inhalte:
+
+Oben: Suchfeld (live-filtert die angezeigten Orte), so wie es bisher auch funktioniert hat.
+
+Scrollbarer Bereich mit:
+
+allen Orten (Titel, Thumbnail, Datum)
+
+Unten:
+
+Admin Informationen wie bisher wie Datenbank Speicher etc.
+
+Button „Abmelden“
+
+6. Zusätzliche Hinweise
+
+Responsives Design: Hamburger-Menü, Overlays und Formularfelder passen sich mobilen Geräten an.

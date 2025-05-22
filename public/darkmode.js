@@ -1,0 +1,505 @@
+// API URL Konfiguration
+const API_URL = window.location.protocol + '//' + window.location.host;
+console.log('API URL:', API_URL);
+
+// Globale Variablen
+let map;
+let allLocations = [];
+let markers = [];
+let addLocationMode = false;
+let selectedLocationCoordinates = null;
+let isAuthenticated = false;
+
+// DOM Elemente
+const loginContainer = document.getElementById('login-container');
+const loginForm = document.getElementById('login-form');
+const accessCodeInput = document.getElementById('access-code');
+const authMessage = document.getElementById('auth-message');
+const sidebar = document.getElementById('sidebar');
+const searchInput = document.getElementById('search-input');
+const clearSearchBtn = document.getElementById('clear-search');
+const locationsListContainer = document.getElementById('locations-list');
+const totalLocationsEl = document.getElementById('total-locations');
+const totalImagesEl = document.getElementById('total-images');
+const databaseSizeEl = document.getElementById('database-size');
+const logoutButton = document.getElementById('logout-button');
+const addButton = document.getElementById('add-button');
+const menuButton = document.getElementById('menu-button');
+const addLocationForm = document.getElementById('add-location-form');
+const locationForm = document.getElementById('location-form');
+const latitudeInput = document.getElementById('latitude');
+const longitudeInput = document.getElementById('longitude');
+const dateInput = document.getElementById('date');
+const cancelButton = document.getElementById('cancel-button');
+const formMessage = document.getElementById('form-message');
+const locationPopup = document.getElementById('location-popup');
+const popupImage = document.getElementById('popup-image');
+const popupTitle = document.getElementById('popup-title');
+const popupDescription = document.getElementById('popup-description');
+const popupDate = document.getElementById('popup-date');
+const popupClose = document.querySelector('.popup-close');
+const overlay = document.getElementById('overlay');
+const closeButton = document.querySelector('.close-button');
+
+// Beim Laden der Seite
+document.addEventListener('DOMContentLoaded', () => {
+    // Heutiges Datum im Formular vorausfüllen
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+    dateInput.value = formattedDate;
+    
+    // Event Listener hinzufügen
+    loginForm.addEventListener('submit', handleLogin);
+    logoutButton.addEventListener('click', handleLogout);
+    addButton.addEventListener('click', toggleAddLocationMode);
+    menuButton.addEventListener('click', toggleSidebar);
+    closeButton.addEventListener('click', toggleSidebar);
+    searchInput.addEventListener('input', filterLocations);
+    clearSearchBtn.addEventListener('click', clearSearch);
+    locationForm.addEventListener('submit', createLocation);
+    cancelButton.addEventListener('click', cancelAddLocation);
+    popupClose.addEventListener('click', closeLocationPopup);
+    overlay.addEventListener('click', () => {
+        hideAddLocationForm();
+        closeLocationPopup();
+    });
+    
+    // Authentifizierungsstatus prüfen
+    checkAuthStatus();
+});
+
+// Authentifizierungsstatus prüfen
+async function checkAuthStatus() {
+    try {
+        const response = await fetch(`${API_URL}/api/locations`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            // User ist authentifiziert
+            isAuthenticated = true;
+            showMap();
+            fetchLocations();
+            fetchStats();
+            loginContainer.style.display = 'none';
+        } else {
+            // User ist nicht authentifiziert
+            isAuthenticated = false;
+            loginContainer.style.display = 'flex';
+        }
+    } catch (error) {
+        console.error('Authentifizierungsprüfung fehlgeschlagen:', error);
+        isAuthenticated = false;
+        loginContainer.style.display = 'flex';
+    }
+}
+
+// Login Handler
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const accessCode = accessCodeInput.value.trim();
+    if (!accessCode) {
+        showAuthMessage('Bitte gib den Zugangscode ein.');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/verify-access`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ accessCode })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && !data.error) {
+            isAuthenticated = true;
+            loginContainer.style.display = 'none';
+            showMap();
+            fetchLocations();
+            fetchStats();
+        } else {
+            showAuthMessage(data.message || 'Ungültiger Zugangscode.');
+        }
+    } catch (error) {
+        showAuthMessage(`Anmeldung fehlgeschlagen: ${error.message}`);
+    }
+}
+
+// Logout Handler
+async function handleLogout() {
+    try {
+        const response = await fetch(`${API_URL}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && !data.error) {
+            isAuthenticated = false;
+            loginContainer.style.display = 'flex';
+            sidebar.classList.remove('open');
+            
+            // Cookie manuell löschen (als Fallback)
+            document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            
+            // Map entfernen, falls vorhanden
+            if (map) {
+                map.remove();
+                map = null;
+            }
+        } else {
+            alert('Abmeldung fehlgeschlagen: ' + (data.message || 'Unbekannter Fehler'));
+        }
+    } catch (error) {
+        alert(`Abmeldung fehlgeschlagen: ${error.message}`);
+    }
+}
+
+// Karte anzeigen
+function showMap() {
+    map = L.map('map-container').setView([51.1657, 10.4515], 6); // Deutschland Zentrum
+    
+    // Dunkles Kartenthema von CartoDB
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Click-Event für Ort hinzufügen
+    map.on('click', (e) => {
+        if (addLocationMode) {
+            selectedLocationCoordinates = e.latlng;
+            latitudeInput.value = e.latlng.lat.toFixed(6);
+            longitudeInput.value = e.latlng.lng.toFixed(6);
+            showAddLocationForm();
+        }
+    });
+}
+
+// Standorte vom Backend abrufen
+async function fetchLocations() {
+    try {
+        const response = await fetch(`${API_URL}/api/locations`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Standorte konnten nicht abgerufen werden');
+        }
+        
+        const data = await response.json();
+        allLocations = data;
+        
+        // Marker auf der Karte platzieren
+        displayLocationsOnMap(allLocations);
+        
+        // Standorte in der Sidebar anzeigen
+        displayLocationsInSidebar(allLocations);
+        
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Standorte:', error);
+    }
+}
+
+// Statistiken vom Backend abrufen
+async function fetchStats() {
+    try {
+        const response = await fetch(`${API_URL}/api/stats`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Statistiken konnten nicht abgerufen werden');
+        }
+        
+        const data = await response.json();
+        
+        // Statistiken anzeigen
+        totalLocationsEl.textContent = data.data.totalLocations;
+        totalImagesEl.textContent = data.data.totalImages;
+        databaseSizeEl.textContent = data.data.databaseSizeMB;
+        
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Statistiken:', error);
+    }
+}
+
+// Standorte auf der Karte darstellen
+function displayLocationsOnMap(locations) {
+    // Bestehende Marker entfernen
+    markers.forEach(marker => {
+        map.removeLayer(marker);
+    });
+    markers = [];
+    
+    // Benutzerdefiniertes Marker-Icon
+    const customIcon = L.icon({
+        iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+    
+    // Neue Marker hinzufügen
+    locations.forEach(location => {
+        if (location.latitude && location.longitude) {
+            const marker = L.marker([location.latitude, location.longitude], { icon: customIcon })
+                .addTo(map)
+                .on('click', () => showLocationDetails(location));
+            
+            markers.push(marker);
+        }
+    });
+}
+
+// Standorte in der Sidebar anzeigen
+function displayLocationsInSidebar(locations) {
+    locationsListContainer.innerHTML = '';
+    
+    if (locations.length === 0) {
+        locationsListContainer.innerHTML = '<div class="no-locations">Keine Standorte gefunden</div>';
+        return;
+    }
+    
+    locations.forEach(location => {
+        const locationItem = document.createElement('div');
+        locationItem.className = 'location-item';
+        locationItem.onclick = () => showLocationDetails(location);
+        
+        // Bild oder Platzhalter
+        const imgSrc = location.has_image || location.image_type 
+            ? `${API_URL}/api/locations/${location.id}/image?thumb=true` 
+            : '/placeholder.svg';
+        
+        locationItem.innerHTML = `
+            <img src="${imgSrc}" alt="${location.title}" class="location-thumbnail" onerror="this.src='/placeholder.svg'">
+            <div class="location-details">
+                <div class="location-title">${location.title}</div>
+                <div class="location-date">Datum: ${formatDate(location.date) || 'Nicht angegeben'}</div>
+            </div>
+        `;
+        
+        locationsListContainer.appendChild(locationItem);
+    });
+}
+
+// Standort-Details anzeigen
+function showLocationDetails(location) {
+    // Popup füllen
+    popupTitle.textContent = location.title;
+    popupDescription.textContent = location.description || 'Keine Beschreibung vorhanden';
+    popupDate.textContent = `Datum: ${formatDate(location.date) || 'Nicht angegeben'}`;
+    
+    // Bild oder Platzhalter
+    if (location.has_image || location.image_type) {
+        popupImage.src = `${API_URL}/api/locations/${location.id}/image`;
+        popupImage.onerror = () => {
+            popupImage.src = '/placeholder.svg';
+        };
+    } else {
+        popupImage.src = '/placeholder.svg';
+    }
+    
+    // Popup und Overlay anzeigen
+    locationPopup.style.display = 'block';
+    
+    // Karte zum Standort zentrieren
+    if (location.latitude && location.longitude && map) {
+        map.setView([location.latitude, location.longitude], 15);
+    }
+}
+
+// Schließen des Standort-Popups
+function closeLocationPopup() {
+    locationPopup.style.display = 'none';
+}
+
+// Toggle Sidebar
+function toggleSidebar() {
+    sidebar.classList.toggle('open');
+}
+
+// Standorte filtern
+function filterLocations() {
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    
+    if (!searchTerm) {
+        displayLocationsInSidebar(allLocations);
+        return;
+    }
+    
+    const filteredLocations = allLocations.filter(location => {
+        const titleMatch = location.title && location.title.toLowerCase().includes(searchTerm);
+        const descriptionMatch = location.description && location.description.toLowerCase().includes(searchTerm);
+        return titleMatch || descriptionMatch;
+    });
+    
+    displayLocationsInSidebar(filteredLocations);
+}
+
+// Suchfeld leeren
+function clearSearch() {
+    searchInput.value = '';
+    displayLocationsInSidebar(allLocations);
+}
+
+// Toggle Add Location Mode
+function toggleAddLocationMode() {
+    addLocationMode = !addLocationMode;
+    
+    if (addLocationMode) {
+        addButton.innerHTML = '<i class="fas fa-times"></i>';
+        map.getContainer().style.cursor = 'crosshair';
+    } else {
+        addButton.innerHTML = '<i class="fas fa-plus"></i>';
+        map.getContainer().style.cursor = '';
+        hideAddLocationForm();
+    }
+}
+
+// Formular zum Hinzufügen eines Ortes anzeigen
+function showAddLocationForm() {
+    addLocationForm.style.display = 'block';
+    overlay.style.display = 'block';
+}
+
+// Formular zum Hinzufügen eines Ortes verstecken
+function hideAddLocationForm() {
+    addLocationForm.style.display = 'none';
+    overlay.style.display = 'none';
+    locationForm.reset();
+    
+    // Heutiges Datum wieder eintragen
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    dateInput.value = formattedDate;
+    
+    formMessage.textContent = '';
+}
+
+// Abbrechen des Hinzufügens
+function cancelAddLocation() {
+    hideAddLocationForm();
+    // Nicht den Add-Modus beenden
+}
+
+// Neuen Standort erstellen
+async function createLocation(event) {
+    event.preventDefault();
+    
+    if (!isAuthenticated) {
+        showFormMessage('Bitte melde dich zuerst an.');
+        return;
+    }
+    
+    if (!selectedLocationCoordinates) {
+        showFormMessage('Bitte wähle einen Ort auf der Karte aus.');
+        return;
+    }
+    
+    // Formulardaten sammeln
+    const locationData = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        latitude: selectedLocationCoordinates.lat,
+        longitude: selectedLocationCoordinates.lng,
+        date: document.getElementById('date').value
+    };
+    
+    try {
+        // Standort erstellen
+        const response = await fetch(`${API_URL}/api/locations`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(locationData)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || data.error) {
+            throw new Error(data.message || 'Standort konnte nicht erstellt werden');
+        }
+        
+        // Bild hochladen, falls vorhanden
+        const imageFile = document.getElementById('image').files[0];
+        if (imageFile) {
+            await uploadImage(data.id, imageFile);
+        }
+        
+        // UI zurücksetzen
+        hideAddLocationForm();
+        toggleAddLocationMode();
+        
+        // Daten aktualisieren
+        fetchLocations();
+        fetchStats();
+        
+    } catch (error) {
+        showFormMessage(`Fehler: ${error.message}`);
+    }
+}
+
+// Bild für Standort hochladen
+async function uploadImage(locationId, imageFile) {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    try {
+        const response = await fetch(`${API_URL}/api/locations/${locationId}/upload`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Bild konnte nicht hochgeladen werden');
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Fehler beim Hochladen des Bildes:', error);
+        return false;
+    }
+}
+
+// Fehlermeldung im Auth-Bereich anzeigen
+function showAuthMessage(message) {
+    authMessage.textContent = message;
+    authMessage.style.display = 'block';
+}
+
+// Fehlermeldung im Formular anzeigen
+function showFormMessage(message) {
+    formMessage.textContent = message;
+    formMessage.style.display = 'block';
+}
+
+// Hilfsfunktion: Datum formatieren
+function formatDate(dateString) {
+    if (!dateString) return null;
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString; // Falles kein gültiges Datum
+    
+    return date.toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}

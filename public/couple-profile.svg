@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#343a40"/>
+  <!-- Linke Person (weiblich) -->
+  <circle cx="75" cy="70" r="28" fill="#ff7700" opacity="0.9"/>
+  <path d="M55 130 Q75 95 95 130" stroke="#ff7700" stroke-width="6" fill="none"/>
+  
+  <!-- Rechte Person (männlich) -->
+  <circle cx="125" cy="70" r="28" fill="#ff9955" opacity="0.9"/>
+  <path d="M105 130 Q125 95 145 130" stroke="#ff9955" stroke-width="6" fill="none"/>
+  
+  <!-- Herz in der Mitte -->
+  <path d="M100 115 C90 105, 75 105, 75 115 S80 130, 100 140 C120 130, 125 125, 125 115 S110 105, 100 115" fill="#ff5555" opacity="0.8"/>
+</svg>
