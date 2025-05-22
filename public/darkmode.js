@@ -516,7 +516,7 @@ async function createLocation(event) {
     
     try {
         // Standort erstellen
-        const response = await fetch(`${API_URL}/api/locations`, {
+        const response = await fetch('/api/locations', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -556,7 +556,7 @@ async function uploadImage(locationId, imageFile) {
     formData.append('image', imageFile);
     
     try {
-        const response = await fetch(`${API_URL}/api/locations/${locationId}/upload`, {
+        const response = await fetch(`/api/locations/${locationId}/upload`, {
             method: 'POST',
             credentials: 'include',
             body: formData
