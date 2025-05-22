@@ -234,10 +234,27 @@ function showMap() {
         map.on('click', (e) => {
             console.log('Kartenklick bei:', e.latlng);
             if (addLocationMode) {
+                // Koordinaten speichern
                 selectedLocationCoordinates = e.latlng;
                 latitudeInput.value = e.latlng.lat.toFixed(6);
                 longitudeInput.value = e.latlng.lng.toFixed(6);
-                showAddLocationForm();
+                
+                // Formular öffnen - aber mit einem kurzen Delay, damit die Karte
+                // den Klick zuerst vollständig verarbeiten kann
+                setTimeout(() => {
+                    showAddLocationForm();
+                    console.log("Formular sollte jetzt angezeigt werden");
+                    
+                    // Marker an geklickter Position anzeigen (optional)
+                    new L.Marker([e.latlng.lat, e.latlng.lng], {
+                        icon: L.divIcon({
+                            className: 'new-location-marker',
+                            html: '<i class="fas fa-map-marker-alt" style="color: #ff7700; font-size: 24px;"></i>',
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 24]
+                        })
+                    }).addTo(map);
+                }, 50);
             }
         });
         
@@ -649,10 +666,24 @@ function toggleAddLocationMode() {
 
 // Formular zum Hinzufügen eines Ortes anzeigen
 function showAddLocationForm() {
-    addLocationForm.style.display = 'block';
-    addLocationForm.style.zIndex = '9999'; // Sehr hoher z-index, damit es über allem liegt
-    console.log('Formular wird angezeigt mit z-index:', addLocationForm.style.zIndex);
+    console.log('Zeige Formular an...');
     overlay.style.display = 'block';
+    addLocationForm.style.display = 'block';
+    
+    // Sicherstellen, dass das Formular über allem liegt
+    addLocationForm.style.zIndex = '9999';
+    overlay.style.zIndex = '9998';
+    
+    // Bessere Sichtbarkeit
+    addLocationForm.style.opacity = '1';
+    
+    // Auf jeden Fall anzeigen!
+    setTimeout(() => {
+        if (window.getComputedStyle(addLocationForm).display === 'none') {
+            console.log('Formular wird erzwungen angezeigt...');
+            addLocationForm.style.display = 'block !important';
+        }
+    }, 100);
 }
 
 // Formular zum Hinzufügen eines Ortes verstecken

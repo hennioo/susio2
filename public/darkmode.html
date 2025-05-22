@@ -126,12 +126,13 @@
             top: 0;
             left: 0;
             right: 0;
-            background-color: transparent;
+            background-color: rgba(18, 18, 18, 0.9);
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0.75rem 1rem;
             z-index: 100;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .profile-image {
@@ -163,20 +164,8 @@
             transition: background-color 0.3s;
         }
         
-        .circular-button {
-            background-color: rgba(30, 30, 30, 0.7);
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            margin-left: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
         .header-button:hover {
-            background-color: rgba(60, 60, 60, 0.8);
+            background-color: rgba(255, 255, 255, 0.1);
         }
         
         /* Map Container */
@@ -329,7 +318,7 @@
         
         /* Add Location Form */
         #add-location-form {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -338,9 +327,9 @@
             background-color: var(--card-dark);
             border-radius: 10px;
             padding: 1.5rem;
-            z-index: 9999;
+            z-index: 1100;
             display: none;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
         }
         
         .form-title {
@@ -503,9 +492,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
+            background-color: rgba(0, 0, 0, 0.7);
             display: none;
-            z-index: 250;
+            z-index: 1000;
         }
         
         /* Error Message */
@@ -556,11 +545,12 @@
     <!-- Header -->
     <header>
         <img src="/couple-profile.svg" alt="Profilbild" class="profile-image" id="profile-image">
+        <div class="header-logo">susio</div>
         <div class="header-actions">
-            <button id="add-button" class="header-button circular-button">
+            <button id="add-button" class="header-button">
                 <i class="fas fa-plus"></i>
             </button>
-            <button id="menu-button" class="header-button circular-button">
+            <button id="menu-button" class="header-button">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
@@ -690,7 +680,7 @@
                 header { 
                     z-index: 1000 !important; 
                     position: fixed !important;
-                    background-color: transparent !important;
+                    background-color: rgba(18, 18, 18, 0.95) !important;
                 }
                 #sidebar { 
                     z-index: 900 !important;
@@ -709,12 +699,8 @@
                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
                 }
                 #add-location-form { 
-                    z-index: 1500 !important;
+                    z-index: 9999 !important;
                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
-                    display: none !important;
-                }
-                #add-location-form.active {
-                    display: block !important;
                 }
                 #overlay { 
                     z-index: 1400 !important;
