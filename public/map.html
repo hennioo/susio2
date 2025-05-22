@@ -227,13 +227,26 @@
     <script src="js/app.js"></script>
     
     <script>
-        // Verbesserte Authentifizierungsprüfung mit Retry-Logik
+        // Verbesserte Authentifizierungsprüfung mit Retry-Logik und Loop-Schutz
         document.addEventListener('DOMContentLoaded', async function() {
             const authOverlay = document.getElementById('auth-overlay');
             const statusMessage = document.getElementById('auth-status-message');
             
+            // Loop-Schutz: Wir löschen hier bewusst den Loop-Schutz von der Login-Seite
+            // Damit wir "sauber" anfangen können, nur wenn wir hierhin weitergeleitet wurden
+            sessionStorage.removeItem('redirecting');
+            sessionStorage.removeItem('redirect_count');
+            
             // Gespeicherte Session-ID aus localStorage abrufen
             const storedSessionId = localStorage.getItem('manual_session_id');
+            const isSessionInitialized = localStorage.getItem('session_initialized') === 'true';
+            
+            // Debug-Ausgabe zur Fehlersuche für den Login-Loop
+            console.log(`Map.html geladen. Session-Status:`, {
+                storedSessionId: storedSessionId ? `${storedSessionId.substring(0, 8)}...` : 'keine',
+                isSessionInitialized,
+                pathname: window.location.pathname
+            });
             
             try {
                 // Status anzeigen
@@ -272,17 +285,30 @@
                         }
                     }, 1000);
                 } else {
-                    // Nicht authentifiziert, zur Login-Seite umleiten
+                    // Nicht authentifiziert, aber wir setzen einen Loop-Schutz-Status
+                    console.log('❌ Nicht authentifiziert. Bereite Weiterleitung zur Login-Seite vor...');
                     statusMessage.textContent = 'Nicht authentifiziert. Leite zur Login-Seite weiter...';
+                    
+                    // Wir entfernen alle Session-Daten, um sauberen Zustand zu haben
+                    localStorage.removeItem('session_initialized');
+                    
+                    // Wir behalten die manuelle Session-ID, falls es nur ein temporäres Problem ist
+                    // localStorage.removeItem('manual_session_id');
+                    
+                    // Loop-Schutz aktivieren vor der Weiterleitung
                     setTimeout(() => {
-                        window.location.href = 'login.html';
+                        window.location.href = 'login.html?auto_redirect=1';
                     }, 1500);
                 }
             } catch (error) {
                 console.error('Fehler bei der Authentifizierungsprüfung:', error);
                 statusMessage.textContent = 'Verbindungsfehler. Leite zur Login-Seite weiter...';
+                
+                // Bei Verbindungsfehlern gehen wir davon aus, dass die Session vielleicht noch gültig ist
+                // Daher behalten wir die Session-Daten bei
+                
                 setTimeout(() => {
-                    window.location.href = 'login.html';
+                    window.location.href = 'login.html?connection_error=1';
                 }, 2000);
             }
         });
