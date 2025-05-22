@@ -650,6 +650,8 @@ function toggleAddLocationMode() {
 // Formular zum Hinzufügen eines Ortes anzeigen
 function showAddLocationForm() {
     addLocationForm.style.display = 'block';
+    addLocationForm.style.zIndex = '9999'; // Sehr hoher z-index, damit es über allem liegt
+    console.log('Formular wird angezeigt mit z-index:', addLocationForm.style.zIndex);
     overlay.style.display = 'block';
 }
 
