@@ -219,9 +219,15 @@ function showMap() {
     }
     
     try {
-        // Karte mit Deutschland-Zentrum initialisieren
+        // Karte mit Deutschland-Zentrum initialisieren und Grenzen setzen
         map = L.map('map-container', {
-            zoomControl: false // Deaktiviere Standard-Zoom-Controls
+            zoomControl: false, // Deaktiviere Standard-Zoom-Controls
+            maxBounds: L.latLngBounds(
+                L.latLng(-85, -180),  // Südwestlicher Punkt (Minimal)
+                L.latLng(85, 180)     // Nordöstlicher Punkt (Maximal)
+            ),
+            minZoom: 3,  // Minimaler Zoom begrenzen
+            maxBoundsViscosity: 1.0  // Macht die Begrenzung fest (1.0 = keine Überschreitung möglich)
         }).setView([51.1657, 10.4515], 6);
         
         console.log('Karte initialisiert');
@@ -394,12 +400,7 @@ function displayLocationsOnMap(locations) {
         
         // Neue Marker hinzufügen
         if (Array.isArray(locations)) {
-            // Testmarker für Berlin hinzufügen, um zu sehen ob grundsätzlich Marker funktionieren
-            console.log('Füge Test-Marker für Berlin hinzu');
-            const berlinMarker = L.marker([52.5200, 13.4050])
-                .addTo(map)
-                .bindPopup('Test-Marker für Berlin');
-            markers.push(berlinMarker);
+            // Test-Marker für Berlin wurde entfernt
             
             // Echte Standorte hinzufügen
             locations.forEach(location => {
