@@ -72,7 +72,8 @@ const popupDescription = document.getElementById('popup-description');
 const popupDate = document.getElementById('popup-date');
 const popupClose = document.querySelector('.popup-close');
 const overlay = document.getElementById('overlay');
-const closeButton = document.querySelector('.close-button');
+// X-Button wurde entfernt
+// const closeButton = document.querySelector('.close-button');
 
 // Beim Laden der Seite
 document.addEventListener('DOMContentLoaded', () => {
@@ -86,7 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutButton.addEventListener('click', handleLogout);
     addButton.addEventListener('click', toggleAddLocationMode);
     menuButton.addEventListener('click', toggleSidebar);
-    closeButton.addEventListener('click', toggleSidebar);
+    // Close-Button wurde entfernt
+    // closeButton.addEventListener('click', toggleSidebar);
     searchInput.addEventListener('input', filterLocations);
     clearSearchBtn.addEventListener('click', clearSearch);
     locationForm.addEventListener('submit', createLocation);
