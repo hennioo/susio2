@@ -1,0 +1,63 @@
+2025-05-22T06:11:29.651796118Z ==> Cloning from https://github.com/hennioo/susio2
+2025-05-22T06:11:30.643861648Z ==> Checking out commit 874a0188b54c1d6b38479b52893b6cae1d332f86 in branch main
+2025-05-22T06:11:32.006929911Z ==> Downloading cache...
+2025-05-22T06:11:43.876896352Z ==> Transferred 92MB in 7s. Extraction took 3s.
+2025-05-22T06:11:46.861048439Z ==> Using Python version 3.11.11 (default)
+2025-05-22T06:11:46.89124723Z ==> Docs on specifying a Python version: https://render.com/docs/python-version
+2025-05-22T06:11:51.573731105Z ==> Using Poetry version 1.7.1 (default)
+2025-05-22T06:11:51.652896013Z ==> Docs on specifying a Poetry version: https://render.com/docs/poetry-version
+2025-05-22T06:11:51.657232229Z ==> Running build command 'npm install'...
+2025-05-22T06:11:51.973090825Z ==> Using Node.js version 22.14.0 (default)
+2025-05-22T06:11:52.002346133Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2025-05-22T06:11:52.097715199Z ==> Using Bun version 1.1.0 (default)
+2025-05-22T06:11:52.192723648Z ==> Docs on specifying a bun version: https://render.com/docs/bun-version
+2025-05-22T06:11:53.766813422Z 
+2025-05-22T06:11:53.766846285Z added 1 package, and audited 132 packages in 1s
+2025-05-22T06:11:53.766877627Z 
+2025-05-22T06:11:53.766883638Z 23 packages are looking for funding
+2025-05-22T06:11:53.766888888Z   run `npm fund` for details
+2025-05-22T06:11:53.767961199Z 
+2025-05-22T06:11:53.76797784Z found 0 vulnerabilities
+2025-05-22T06:11:55.821098639Z ==> Uploading build...
+2025-05-22T06:12:02.668499366Z ==> Uploaded in 4.9s. Compression took 1.9s
+2025-05-22T06:12:03.321464262Z ==> Build successful 🎉
+2025-05-22T06:12:11.135519871Z ==> Deploying...
+2025-05-22T06:13:16.462219305Z ==> Running 'node server.js'
+2025-05-22T06:13:17.771467016Z Starting Phase 1 Test: Database Communication
+2025-05-22T06:13:18.072534505Z Initializing database...
+2025-05-22T06:13:19.149530255Z ==> No open ports detected, continuing to scan...
+2025-05-22T06:13:19.297659797Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2025-05-22T06:13:19.299394455Z ✅ Database connection successful
+2025-05-22T06:13:19.299415886Z Checking if locations table exists...
+2025-05-22T06:13:19.444996946Z ✅ locations table already exists
+2025-05-22T06:13:19.445019586Z Checking if couple_image table exists...
+2025-05-22T06:13:19.596087794Z ✅ couple_image table already exists
+2025-05-22T06:13:19.596126965Z ✅ Database initialization completed successfully
+2025-05-22T06:13:19.598259679Z ✅ Server running on port 10000
+2025-05-22T06:13:19.598367801Z 📝 API documentation available at http://localhost:10000/
+2025-05-22T06:13:19.598374701Z 🔐 Login page available at http://localhost:10000/login
+2025-05-22T06:13:21.824393678Z ==> Your service is live 🎉
+2025-05-22T06:13:34.382708924Z [2025-05-22T06:13:34.381Z] GET /wordpress/wp-admin/setup-config.php
+2025-05-22T06:14:09.165179318Z [2025-05-22T06:14:09.164Z] GET /wp-admin/setup-config.php
+2025-05-22T06:14:39.003575728Z [2025-05-22T06:14:39.002Z] GET /api/locations
+2025-05-22T06:14:39.003596129Z 🔒 Validating session: 68cf50472b952dcb92c4d83e98450b3dfad85b6cece38752cc7994475460bc82
+2025-05-22T06:14:39.003601769Z ❌ Invalid session: 68cf50472b952dcb92c4d83e98450b3dfad85b6cece38752cc7994475460bc82
+2025-05-22T06:14:41.512703119Z [2025-05-22T06:14:41.510Z] POST /verify-access
+2025-05-22T06:14:41.51271692Z Verifying access code
+2025-05-22T06:14:41.520821054Z ✅ New session created: be085e4879d08a4896ca877d531e840b3448e2e599aa5237f1d37477bc4dfdae
+2025-05-22T06:14:41.521367827Z ✅ Access code verified successfully
+2025-05-22T06:14:41.785629794Z [2025-05-22T06:14:41.785Z] GET /api/stats
+2025-05-22T06:14:41.785710586Z 🔒 Validating session: be085e4879d08a4896ca877d531e840b3448e2e599aa5237f1d37477bc4dfdae
+2025-05-22T06:14:41.785728387Z ✅ Valid session: be085e4879d08a4896ca877d531e840b3448e2e599aa5237f1d37477bc4dfdae
+2025-05-22T06:14:41.786027534Z 🔒 Validating session: be085e4879d08a4896ca877d531e840b3448e2e599aa5237f1d37477bc4dfdae
+2025-05-22T06:14:41.786035604Z ✅ Valid session: be085e4879d08a4896ca877d531e840b3448e2e599aa5237f1d37477bc4dfdae
+2025-05-22T06:14:41.78626122Z 📊 Fetching statistics
+2025-05-22T06:14:41.795213565Z [2025-05-22T06:14:41.795Z] GET /api/locations
+2025-05-22T06:14:41.795989955Z 🔒 Validating session: be085e4879d08a4896ca877d531e840b3448e2e599aa5237f1d37477bc4dfdae
+2025-05-22T06:14:41.796002445Z ✅ Valid session: be085e4879d08a4896ca877d531e840b3448e2e599aa5237f1d37477bc4dfdae
+2025-05-22T06:14:41.796007325Z 📊 Fetching all locations
+2025-05-22T06:14:43.196910142Z [2025-05-22T06:14:43.196Z] GET /api/locations
+2025-05-22T06:14:43.197205369Z 🔒 Validating session: undefined
+2025-05-22T06:14:43.19721813Z ❌ Invalid session: undefined
+2025-05-22T06:14:43.276050693Z ✅ Statistics fetched successfully: 3 locations, 3 images, DB size: 16 MB
+2025-05-22T06:14:46.749642885Z ✅ Found 3 locations

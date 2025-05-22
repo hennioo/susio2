@@ -1,5 +1,5 @@
 // API URL Konfiguration
-const API_URL = window.location.protocol + '//' + window.location.host;
+const API_URL = window.location.protocol + '//' + window.location.hostname + ':10000';
 console.log('API URL:', API_URL);
 
 // Globale Variablen
@@ -197,6 +197,7 @@ async function fetchLocations() {
         }
         
         const data = await response.json();
+        console.log('Erhaltene Standorte:', data);
         allLocations = data;
         
         // Marker auf der Karte platzieren
@@ -252,41 +253,64 @@ function displayLocationsOnMap(locations) {
         shadowSize: [41, 41]
     });
     
+    console.log('Verarbeite Standorte für Karte:', locations);
+    
     // Neue Marker hinzufügen
-    locations.forEach(location => {
-        if (location.latitude && location.longitude) {
-            const marker = L.marker([location.latitude, location.longitude], { icon: customIcon })
-                .addTo(map)
-                .on('click', () => showLocationDetails(location));
+    if (Array.isArray(locations)) {
+        locations.forEach(location => {
+            // Prüfen ob die Standortdaten numerische Koordinaten enthalten
+            const lat = parseFloat(location.latitude);
+            const lng = parseFloat(location.longitude);
             
-            markers.push(marker);
-        }
-    });
+            if (!isNaN(lat) && !isNaN(lng)) {
+                console.log(`Füge Marker hinzu für: ${location.title} an [${lat}, ${lng}]`);
+                const marker = L.marker([lat, lng], { icon: customIcon })
+                    .addTo(map)
+                    .on('click', () => showLocationDetails(location));
+                
+                markers.push(marker);
+            } else {
+                console.warn(`Ungültige Koordinaten für Standort: ${location.title}, lat: ${location.latitude}, lng: ${location.longitude}`);
+            }
+        });
+    } else {
+        console.error('Erhaltene Standorte sind kein Array:', locations);
+    }
 }
 
 // Standorte in der Sidebar anzeigen
 function displayLocationsInSidebar(locations) {
     locationsListContainer.innerHTML = '';
     
-    if (locations.length === 0) {
+    if (!Array.isArray(locations) || locations.length === 0) {
         locationsListContainer.innerHTML = '<div class="no-locations">Keine Standorte gefunden</div>';
         return;
     }
     
+    console.log('Zeige Standorte in Sidebar an:', locations);
+    
     locations.forEach(location => {
+        if (!location || typeof location !== 'object') {
+            console.warn('Ungültiges Standortobjekt:', location);
+            return;
+        }
+        
         const locationItem = document.createElement('div');
         locationItem.className = 'location-item';
         locationItem.onclick = () => showLocationDetails(location);
         
+        const title = location.title || 'Unbenannter Standort';
+        
         // Bild oder Platzhalter
-        const imgSrc = location.has_image || location.image_type 
-            ? `${API_URL}/api/locations/${location.id}/image?thumb=true` 
-            : '/placeholder.svg';
+        let imgSrc = '/placeholder.svg';
+        if (location.has_image || location.image_type) {
+            imgSrc = `${API_URL}/api/locations/${location.id}/image?thumb=true`;
+        }
         
         locationItem.innerHTML = `
-            <img src="${imgSrc}" alt="${location.title}" class="location-thumbnail" onerror="this.src='/placeholder.svg'">
+            <img src="${imgSrc}" alt="${title}" class="location-thumbnail" onerror="this.src='/placeholder.svg'">
             <div class="location-details">
-                <div class="location-title">${location.title}</div>
+                <div class="location-title">${title}</div>
                 <div class="location-date">Datum: ${formatDate(location.date) || 'Nicht angegeben'}</div>
             </div>
         `;
@@ -297,27 +321,49 @@ function displayLocationsInSidebar(locations) {
 
 // Standort-Details anzeigen
 function showLocationDetails(location) {
+    if (!location || typeof location !== 'object') {
+        console.error('Ungültiges Standortobjekt für Details:', location);
+        return;
+    }
+    
+    console.log('Zeige Details für Standort:', location);
+    
     // Popup füllen
-    popupTitle.textContent = location.title;
+    popupTitle.textContent = location.title || 'Unbenannter Standort';
     popupDescription.textContent = location.description || 'Keine Beschreibung vorhanden';
     popupDate.textContent = `Datum: ${formatDate(location.date) || 'Nicht angegeben'}`;
     
     // Bild oder Platzhalter
+    popupImage.src = '/placeholder.svg'; // Default zuerst setzen
     if (location.has_image || location.image_type) {
-        popupImage.src = `${API_URL}/api/locations/${location.id}/image`;
-        popupImage.onerror = () => {
+        try {
+            popupImage.src = `${API_URL}/api/locations/${location.id}/image`;
+            popupImage.onerror = () => {
+                console.warn(`Bild für Standort ${location.id} konnte nicht geladen werden`);
+                popupImage.src = '/placeholder.svg';
+            };
+        } catch (error) {
+            console.error('Fehler beim Laden des Standortbildes:', error);
             popupImage.src = '/placeholder.svg';
-        };
-    } else {
-        popupImage.src = '/placeholder.svg';
+        }
     }
     
-    // Popup und Overlay anzeigen
+    // Popup anzeigen
     locationPopup.style.display = 'block';
     
     // Karte zum Standort zentrieren
-    if (location.latitude && location.longitude && map) {
-        map.setView([location.latitude, location.longitude], 15);
+    try {
+        const lat = parseFloat(location.latitude);
+        const lng = parseFloat(location.longitude);
+        
+        if (!isNaN(lat) && !isNaN(lng) && map) {
+            console.log(`Zentriere Karte auf: [${lat}, ${lng}]`);
+            map.setView([lat, lng], 15);
+        } else {
+            console.warn('Ungültige Koordinaten für Kartenzentrierung:', location.latitude, location.longitude);
+        }
+    } catch (error) {
+        console.error('Fehler beim Zentrieren der Karte:', error);
     }
 }
 
@@ -494,12 +540,17 @@ function showFormMessage(message) {
 function formatDate(dateString) {
     if (!dateString) return null;
     
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString; // Falles kein gültiges Datum
-    
-    return date.toLocaleDateString('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString; // Falls kein gültiges Datum
+        
+        return date.toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    } catch (error) {
+        console.error('Fehler beim Formatieren des Datums:', error);
+        return dateString; // Originaldatum zurückgeben im Fehlerfall
+    }
 }
