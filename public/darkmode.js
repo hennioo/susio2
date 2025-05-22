@@ -40,6 +40,7 @@ let allLocations = [];
 let markers = [];
 let addLocationMode = false;
 let selectedLocationCoordinates = null;
+let tempLocationMarker = null; // Variable für temporären Marker
 let isAuthenticated = false;
 
 // DOM Elemente
