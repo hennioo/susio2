@@ -253,8 +253,13 @@ function showMap() {
                     showAddLocationForm();
                     console.log("Formular sollte jetzt angezeigt werden");
                     
-                    // Marker an geklickter Position anzeigen (optional)
-                    new L.Marker([e.latlng.lat, e.latlng.lng], {
+                    // Existierenden temporären Marker entfernen, falls vorhanden
+                    if (tempLocationMarker) {
+                        map.removeLayer(tempLocationMarker);
+                    }
+                    
+                    // Neuen temporären Marker erstellen und speichern
+                    tempLocationMarker = new L.Marker([e.latlng.lat, e.latlng.lng], {
                         icon: L.divIcon({
                             className: 'new-location-marker',
                             html: '<i class="fas fa-map-marker-alt" style="color: #ff7700; font-size: 24px;"></i>',
@@ -688,6 +693,15 @@ function toggleAddLocationMode() {
         
         // Benachrichtigung ausblenden
         mapNotification.style.display = 'none';
+        
+        // Temporären Marker entfernen, wenn vorhanden
+        if (tempLocationMarker) {
+            map.removeLayer(tempLocationMarker);
+            tempLocationMarker = null;
+        }
+        
+        // Koordinaten zurücksetzen
+        selectedLocationCoordinates = null;
     }
 }
 
@@ -780,6 +794,12 @@ async function createLocation(event) {
             const locationId = data.data ? data.data.id : data.id;
             console.log('Hochladen von Bild für Standort ID:', locationId);
             await uploadImage(locationId, imageFile);
+        }
+        
+        // Temporären Marker entfernen
+        if (tempLocationMarker) {
+            map.removeLayer(tempLocationMarker);
+            tempLocationMarker = null;
         }
         
         // UI zurücksetzen
