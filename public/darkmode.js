@@ -561,17 +561,10 @@ function showLocationDetails(location) {
     // Popup anzeigen
     locationPopup.style.display = 'block';
     
-    // Karte zum Standort zentrieren
+    // Karte nicht mehr zum Standort zentrieren - entfernt wie gewünscht
     try {
-        const lat = parseFloat(location.latitude);
-        const lng = parseFloat(location.longitude);
-        
-        if (!isNaN(lat) && !isNaN(lng) && map) {
-            console.log(`Zentriere Karte auf: [${lat}, ${lng}]`);
-            map.setView([lat, lng], 15);
-        } else {
-            console.warn('Ungültige Koordinaten für Kartenzentrierung:', location.latitude, location.longitude);
-        }
+        // Entfernte Zentrierung der Karte, sodass die Karte im aktuellen Ausschnitt bleibt
+        console.log('Keine Kartenzentrierung beim Klick auf Marker');
     } catch (error) {
         console.error('Fehler beim Zentrieren der Karte:', error);
     }
