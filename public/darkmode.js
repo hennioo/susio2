@@ -1,6 +1,34 @@
-// API URL Konfiguration
-const API_URL = window.location.protocol + '//' + window.location.hostname + ':10000';
-console.log('API URL:', API_URL);
+// API URL Konfiguration - vereinfacht für Render-Kompatibilität
+const API_URL = ''; // Leerer String verwendet relative URLs, die immer zum aktuellen Host führen
+
+// Versuche, die Verbindung zum Backend zu prüfen
+async function checkApiConnection() {
+    const connectionStatus = document.getElementById('connection-status');
+    
+    try {
+        const response = await fetch('/api-info', {
+            method: 'GET',
+            // Kein credentials: 'include' bei dieser Prüfung nötig
+        });
+        
+        if (response.ok) {
+            connectionStatus.textContent = 'Verbindung zum Server hergestellt ✓';
+            connectionStatus.className = 'connection-status success';
+            return true;
+        } else {
+            connectionStatus.textContent = 'Verbindungsproblem: Server antwortet, aber mit Status ' + response.status;
+            connectionStatus.className = 'connection-status error';
+            return false;
+        }
+    } catch (error) {
+        connectionStatus.textContent = 'Verbindungsproblem: ' + error.message;
+        connectionStatus.className = 'connection-status error';
+        return false;
+    }
+}
+
+// API-Verbindung beim Laden prüfen
+document.addEventListener('DOMContentLoaded', checkApiConnection);
 
 // Globale Variablen
 let map;
@@ -71,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Authentifizierungsstatus prüfen
 async function checkAuthStatus() {
     try {
-        const response = await fetch(`${API_URL}/api/locations`, {
+        const response = await fetch('/api/locations', {
             method: 'GET',
             credentials: 'include'
         });
@@ -106,7 +134,9 @@ async function handleLogin(event) {
     }
     
     try {
-        const response = await fetch(`${API_URL}/verify-access`, {
+        console.log('Sende Login-Anfrage...');
+        
+        const response = await fetch('/verify-access', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -115,7 +145,10 @@ async function handleLogin(event) {
             body: JSON.stringify({ accessCode })
         });
         
+        console.log('Login-Antwort erhalten:', response.status);
+        
         const data = await response.json();
+        console.log('Login-Daten:', data);
         
         if (response.ok && !data.error) {
             isAuthenticated = true;
@@ -127,6 +160,7 @@ async function handleLogin(event) {
             showAuthMessage(data.message || 'Ungültiger Zugangscode.');
         }
     } catch (error) {
+        console.error('Login-Fehler:', error);
         showAuthMessage(`Anmeldung fehlgeschlagen: ${error.message}`);
     }
 }
@@ -134,7 +168,7 @@ async function handleLogin(event) {
 // Logout Handler
 async function handleLogout() {
     try {
-        const response = await fetch(`${API_URL}/logout`, {
+        const response = await fetch('/logout', {
             method: 'POST',
             credentials: 'include'
         });
@@ -187,25 +221,34 @@ function showMap() {
 // Standorte vom Backend abrufen
 async function fetchLocations() {
     try {
-        const response = await fetch(`${API_URL}/api/locations`, {
+        console.log('Rufe Standorte ab...');
+        
+        const response = await fetch('/api/locations', {
             method: 'GET',
             credentials: 'include'
         });
         
+        console.log('Standorte-Antwort Status:', response.status);
+        
         if (!response.ok) {
+            console.error('Fehler beim Abrufen der Standorte, Status:', response.status);
             throw new Error('Standorte konnten nicht abgerufen werden');
         }
         
         const data = await response.json();
         console.log('Erhaltene Standorte:', data);
-        allLocations = data;
         
-        // Marker auf der Karte platzieren
-        displayLocationsOnMap(allLocations);
-        
-        // Standorte in der Sidebar anzeigen
-        displayLocationsInSidebar(allLocations);
-        
+        if (Array.isArray(data)) {
+            allLocations = data;
+            
+            // Marker auf der Karte platzieren
+            displayLocationsOnMap(allLocations);
+            
+            // Standorte in der Sidebar anzeigen
+            displayLocationsInSidebar(allLocations);
+        } else {
+            console.error('Unerwartetes Datenformat für Standorte:', data);
+        }
     } catch (error) {
         console.error('Fehler beim Abrufen der Standorte:', error);
     }
@@ -214,22 +257,29 @@ async function fetchLocations() {
 // Statistiken vom Backend abrufen
 async function fetchStats() {
     try {
-        const response = await fetch(`${API_URL}/api/stats`, {
+        console.log('Rufe Statistiken ab...');
+        
+        const response = await fetch('/api/stats', {
             method: 'GET',
             credentials: 'include'
         });
         
+        console.log('Statistiken-Antwort Status:', response.status);
+        
         if (!response.ok) {
+            console.error('Statistiken-Fehler:', response.status);
             throw new Error('Statistiken konnten nicht abgerufen werden');
         }
         
         const data = await response.json();
+        console.log('Statistiken-Daten:', data);
         
         // Statistiken anzeigen
-        totalLocationsEl.textContent = data.data.totalLocations;
-        totalImagesEl.textContent = data.data.totalImages;
-        databaseSizeEl.textContent = data.data.databaseSizeMB;
-        
+        if (data && data.data) {
+            totalLocationsEl.textContent = data.data.totalLocations || '0';
+            totalImagesEl.textContent = data.data.totalImages || '0';
+            databaseSizeEl.textContent = data.data.databaseSizeMB || '0';
+        }
     } catch (error) {
         console.error('Fehler beim Abrufen der Statistiken:', error);
     }
@@ -304,7 +354,7 @@ function displayLocationsInSidebar(locations) {
         // Bild oder Platzhalter
         let imgSrc = '/placeholder.svg';
         if (location.has_image || location.image_type) {
-            imgSrc = `${API_URL}/api/locations/${location.id}/image?thumb=true`;
+            imgSrc = `/api/locations/${location.id}/image?thumb=true`;
         }
         
         locationItem.innerHTML = `
@@ -337,7 +387,7 @@ function showLocationDetails(location) {
     popupImage.src = '/placeholder.svg'; // Default zuerst setzen
     if (location.has_image || location.image_type) {
         try {
-            popupImage.src = `${API_URL}/api/locations/${location.id}/image`;
+            popupImage.src = `/api/locations/${location.id}/image`;
             popupImage.onerror = () => {
                 console.warn(`Bild für Standort ${location.id} konnte nicht geladen werden`);
                 popupImage.src = '/placeholder.svg';

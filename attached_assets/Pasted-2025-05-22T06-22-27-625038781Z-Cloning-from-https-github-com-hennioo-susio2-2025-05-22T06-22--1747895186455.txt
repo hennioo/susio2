@@ -1,0 +1,37 @@
+2025-05-22T06:22:27.625038781Z ==> Cloning from https://github.com/hennioo/susio2
+2025-05-22T06:22:29.195482906Z ==> Checking out commit a4bba8b58a562aa8524c7d15345cf4e2c260b2af in branch main
+2025-05-22T06:22:31.532820998Z ==> Downloading cache...
+2025-05-22T06:22:41.817957086Z ==> Transferred 94MB in 8s. Extraction took 1s.
+2025-05-22T06:23:02.50638663Z ==> Using Python version 3.11.11 (default)
+2025-05-22T06:23:02.53427182Z ==> Docs on specifying a Python version: https://render.com/docs/python-version
+2025-05-22T06:23:07.233084993Z ==> Using Poetry version 1.7.1 (default)
+2025-05-22T06:23:07.301120979Z ==> Docs on specifying a Poetry version: https://render.com/docs/poetry-version
+2025-05-22T06:23:07.30549131Z ==> Running build command 'npm install'...
+2025-05-22T06:23:07.391914333Z ==> Using Node.js version 22.14.0 (default)
+2025-05-22T06:23:07.41798641Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2025-05-22T06:23:07.516576946Z ==> Using Bun version 1.1.0 (default)
+2025-05-22T06:23:07.516592726Z ==> Docs on specifying a bun version: https://render.com/docs/bun-version
+2025-05-22T06:23:08.522863327Z 
+2025-05-22T06:23:08.522889228Z up to date, audited 132 packages in 741ms
+2025-05-22T06:23:08.522896588Z 
+2025-05-22T06:23:08.522909578Z 23 packages are looking for funding
+2025-05-22T06:23:08.522916068Z   run `npm fund` for details
+2025-05-22T06:23:08.523701383Z 
+2025-05-22T06:23:08.523715613Z found 0 vulnerabilities
+2025-05-22T06:23:14.430899808Z ==> Uploading build...
+2025-05-22T06:23:37.793705978Z ==> Uploaded in 5.1s. Compression took 18.3s
+2025-05-22T06:23:37.821746422Z ==> Build successful 🎉
+2025-05-22T06:23:40.760821735Z ==> Deploying...
+2025-05-22T06:24:06.308993594Z ==> Running 'node server.js'
+2025-05-22T06:24:07.7946953Z Starting Phase 1 Test: Database Communication
+2025-05-22T06:24:08.008679742Z Initializing database...
+2025-05-22T06:24:09.338771412Z ✅ Database connection successful
+2025-05-22T06:24:09.339248487Z Checking if locations table exists...
+2025-05-22T06:24:09.486224257Z ✅ locations table already exists
+2025-05-22T06:24:09.486249808Z Checking if couple_image table exists...
+2025-05-22T06:24:09.629520564Z ✅ couple_image table already exists
+2025-05-22T06:24:09.633103805Z ✅ Database initialization completed successfully
+2025-05-22T06:24:09.633118155Z ✅ Server running on port 10000
+2025-05-22T06:24:09.633122385Z 📝 API documentation available at http://localhost:10000/
+2025-05-22T06:24:09.633126266Z 🔐 Login page available at http://localhost:10000/login
+2025-05-22T06:24:12.88939534Z ==> Your service is live 🎉
