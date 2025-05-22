@@ -120,19 +120,20 @@
             color: #dc3545;
         }
         
-        /* Header */
+        /* Header - vollständig transparent */
         header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background-color: transparent;
+            background: none !important;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0.75rem 1rem;
             z-index: 100;
-            box-shadow: none;
+            box-shadow: none !important;
+            border: none !important;
             pointer-events: none; /* Erlaubt Klicks durch den Header auf die Karte */
         }
         
@@ -580,7 +581,7 @@
     </div>
     
     <!-- Header -->
-    <header>
+    <header style="background: none !important; border: none !important; box-shadow: none !important;">
         <img src="/couple-profile.svg" alt="Profilbild" class="profile-image" id="profile-image">
         <div class="header-spacer"></div>
         <div class="header-actions">
@@ -715,7 +716,7 @@
                 header { 
                     z-index: 1000 !important; 
                     position: fixed !important;
-                    background-color: rgba(18, 18, 18, 0.95) !important;
+                    background: none !important;
                 }
                 #sidebar { 
                     z-index: 900 !important;
