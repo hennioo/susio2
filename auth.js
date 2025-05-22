@@ -1,53 +1,7 @@
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 
-// Persistenter Session-Speicher mit Datei-Backup
-// Bei jedem Deployment werden sonst alle Sessions verloren
-let sessions = new Map();
-
-// Pfad zur Session-Speicher-Datei
-const SESSION_FILE_PATH = path.join(__dirname, '.session_store.json');
-
-// Versuche, gespeicherte Sessions zu laden
-try {
-  if (fs.existsSync(SESSION_FILE_PATH)) {
-    const sessionData = JSON.parse(fs.readFileSync(SESSION_FILE_PATH, 'utf8'));
-    
-    // Sessions aus Datei wiederherstellen
-    sessions = new Map(Object.entries(sessionData).map(([key, value]) => {
-      // Datum-Objekte wiederherstellen
-      return [key, {
-        ...value,
-        createdAt: new Date(value.createdAt)
-      }];
-    }));
-    
-    console.log(`✅ Loaded ${sessions.size} sessions from storage`);
-  } else {
-    console.log('ℹ️ No session storage file found, starting with empty sessions');
-  }
-} catch (error) {
-  console.error('❌ Error loading sessions from file:', error);
-  // Sessions zurücksetzen, falls Problem beim Laden
-  sessions = new Map();
-}
-
-// Speichert Sessions in Datei
-function saveSessionsToFile() {
-  try {
-    // Map in Objekt umwandeln für JSON-Speicherung
-    const sessionObj = {};
-    sessions.forEach((value, key) => {
-      sessionObj[key] = value;
-    });
-    
-    fs.writeFileSync(SESSION_FILE_PATH, JSON.stringify(sessionObj, null, 2));
-    console.log(`✅ Saved ${sessions.size} sessions to storage`);
-  } catch (error) {
-    console.error('❌ Error saving sessions to file:', error);
-  }
-}
+// In-memory session storage (as specified in requirements)
+const sessions = new Map();
 
 /**
  * Generates a random session ID
@@ -85,10 +39,6 @@ function createSession() {
   });
   
   console.log(`✅ New session created: ${sessionId}`);
-  
-  // Session in Datei speichern, damit sie Neustarts überlebt
-  saveSessionsToFile();
-  
   return sessionId;
 }
 
@@ -137,10 +87,6 @@ function invalidateSession(sessionId) {
   if (sessions.has(sessionId)) {
     sessions.delete(sessionId);
     console.log(`✅ Session invalidated: ${sessionId}`);
-    
-    // Sessions-Datei aktualisieren
-    saveSessionsToFile();
-    
     return true;
   }
   
@@ -151,30 +97,19 @@ function invalidateSession(sessionId) {
 /**
  * Authentication middleware for Express
  * Checks if the request has a valid session
- * Unterstützt mehrere Authentifizierungsmethoden: 
- * - Cookie-basiert (traditionell)
- * - Header-basiert (für Fallback mit localStorage)
- * - Query-Parameter (für spezielle Anwendungsfälle)
  */
 function requireAuth(req, res, next) {
-  // Session-ID aus mehreren möglichen Quellen extrahieren
-  const sessionId = req.cookies.sessionId || 
-                    req.headers['x-session-id'] || 
-                    req.query.sessionId;
+  // Get session ID from cookie or query parameter
+  const sessionId = req.cookies.sessionId || req.query.sessionId;
   
-  // Detaillierte Debugging-Informationen
-  const source = req.cookies.sessionId ? 'cookie' : 
-               (req.headers['x-session-id'] ? 'header' : 
-               (req.query.sessionId ? 'query' : 'nicht gefunden'));
-  
-  console.log(`🔒 Validating session: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine'} (Quelle: ${source})`);
+  console.log(`🔒 Validating session: ${sessionId}`);
   
   if (validateSession(sessionId)) {
-    console.log(`✅ Valid session: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine'}`);
+    console.log(`✅ Valid session: ${sessionId}`);
     return next();
   }
   
-  console.log(`❌ Invalid session: ${sessionId ? sessionId.substring(0, 8) + '...' : 'keine'}`);
+  console.log(`❌ Invalid session: ${sessionId}`);
   return res.status(401).json({
     error: true,
     message: 'Unauthorized. Please log in first.'

@@ -7,42 +7,21 @@ const authRoutes = require('./routes/auth');
 const locationsRoutes = require('./routes/locations');
 const uploadsRoutes = require('./routes/uploads');
 const statsRoutes = require('./routes/stats');
-const sessionRoutes = require('./routes/session');
 
 // Load environment variables
 dotenv.config();
 
 // Initialize express app
 const app = express();
-// Render gibt den Port über die PORT-Umgebungsvariable an. Wichtig: Kein fester Fallback-Port!
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 // Middleware
 app.use(express.json({ limit: '15mb' })); // Erhöhte Größenbegrenzung für JSON-Daten
 app.use(express.urlencoded({ extended: true, limit: '15mb' })); // Erhöhte Größenbegrenzung für URL-kodierte Daten
 app.use(cookieParser());
-// CORS Konfiguration - wichtig für Render-Deployment
 app.use(cors({
-  origin: function(origin, callback) {
-    // Erlaube Anfragen ohne Origin (wie mobile Apps, Postman usw.)
-    if (!origin) return callback(null, true);
-    
-    // Erlaubte Origins - basierend auf Environment 
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5000',
-      'https://susio2.onrender.com'
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS policy violation'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  origin: true,
+  credentials: true
 }));
 
 // Statische Dateien aus dem public-Ordner bereitstellen
@@ -59,7 +38,6 @@ app.use('/', authRoutes);
 app.use('/api/locations', uploadsRoutes);
 app.use('/api', locationsRoutes);
 app.use('/api', statsRoutes);
-app.use('/api', sessionRoutes);
 
 // API Info Route
 app.get('/api-info', (req, res) => {
@@ -121,8 +99,8 @@ async function startServer() {
       process.exit(1);
     }
     
-    // Start the server - auf Render ohne Host-Bindung starten
-    app.listen(PORT, () => {
+    // Start the server - explicitly bind to 0.0.0.0 to allow external access
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`📝 API documentation available at http://localhost:${PORT}/`);
       console.log(`🔐 Login page available at http://localhost:${PORT}/login`);
