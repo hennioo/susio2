@@ -1,3 +1,3 @@
 #!/bin/bash
-# Start the Express.js server with proper database connection
-node server.js
+echo "Starte den Express-Server..."
+node express-server.js
